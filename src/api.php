@@ -6,4 +6,4 @@
 
     use Zexa\Includes\Security;
 
-    echo Security::get_ip_info();
+    echo json_encode(Security::get_ip_info());

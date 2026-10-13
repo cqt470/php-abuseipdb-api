@@ -1,7 +1,10 @@
 <?php
     namespace Zexa\Includes;
 
-    use Exception;
+use Cache;
+use Exception;
+
+    include_once __DIR__."/cache.php";
 
     class Security{
         /**
@@ -37,9 +40,14 @@
          *
          * @param string $ip the IP to check. If null, Security::get_ip() will be used.
          * @param boolean $skip_cache request data from AbuseIPDB API even if the IP has been cached?
-         * @return string
+         * @return ?array
          */
-        public static function get_ip_info(?string $ip = null, bool $skip_cache = false): string{
+        public static function get_ip_info(?string $ip = null, bool $skip_cache = false): ?array{
+            $cache = new Cache(__DIR__."/../../cache/ips.json");
+
+            if(!$ip) $ip = Security::get_ip();
+            if($cache->check_for_entry("ipAddress", $ip) && !$skip_cache) return $cache->get_entry("ipAddress", $ip);
+
             // retrieve data
             $key = \API_KEY_ABUSEIPDB;
             $context = stream_context_create([
@@ -51,10 +59,11 @@
                 ]
             ]);
 
-            if(!$ip) $ip = Security::get_ip();
             $data = json_decode(file_get_contents("https://api.abuseipdb.com/api/v2/check?ipAddress=$ip&verbose&key=$key", false, $context), true);
+            
+            $cache->add_entry($data);
 
-            return json_encode($data);
+            return $data;
         }
     }
 
