@@ -5,6 +5,7 @@
     use Exception;
 
     include_once __DIR__."/index.php";
+    include_once __DIR__."/../../env.php";
 
     class Security{
         /**
