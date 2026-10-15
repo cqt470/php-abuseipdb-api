@@ -31,7 +31,10 @@
 
         private function check(){
             if(!Security::validate_ip($this->ip)) $this->send_error("The IP doesn't seem to be valid.");
-            $this->send_success("yoooo");
+            
+            $info = Security::get_ip_info($this->ip);
+            $this->add_response_parameter("info", $info);
+            $this->send_success("ok");
         }
     }
 

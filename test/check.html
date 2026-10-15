@@ -30,7 +30,7 @@
                     return {"message": result?.message, "code": response.status};
                 }
 
-                return {"message": result?.message, "content": result, "code": response.status};
+                return {"message": result?.message, "parameters": result?.parameters, "code": response.status};
             }catch(error){
                 return {"error": error.message, "type": "trycatch"};
             }
@@ -57,6 +57,7 @@
 
             const result = await get_data("http://localhost:8000/api/check.php", payload);
             response.innerHTML = `API Response: ${result.message} (HTTP: ${result.code})`;
+            if(result?.parameters?.info)response.innerHTML += `<br><pre>${JSON.stringify(result?.parameters?.info, null, 2)}</pre>`;
         })
     </script>
 </body>
