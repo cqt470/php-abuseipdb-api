@@ -1,10 +1,10 @@
 <?php
     namespace Zexa\Includes;
 
-use Cache;
-use Exception;
+    use Cache;
+    use Exception;
 
-    include_once __DIR__."/cache.php";
+    include_once __DIR__."/index.php";
 
     class Security{
         /**
