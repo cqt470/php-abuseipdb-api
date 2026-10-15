@@ -1,7 +1,7 @@
 <?php
     namespace Zexa\Includes;
 
-    use Cache;
+    use Zexa\Includes\Cache;
     use Exception;
 
     include_once __DIR__."/index.php";
