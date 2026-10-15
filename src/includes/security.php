@@ -46,8 +46,9 @@
         public static function get_ip_info(?string $ip = null, bool $skip_cache = false): ?array{
             $cache = new Cache(__DIR__."/../../cache/ips.json");
 
+            $caching = \ENABLE_CACHING;
             if(!$ip) $ip = Security::get_ip();
-            if($cache->check_for_entry("ipAddress", $ip) && !$skip_cache) return $cache->get_entry("ipAddress", $ip);
+            if($cache->check_for_entry("ipAddress", $ip) && !$skip_cache && $caching) return $cache->get_entry("ipAddress", $ip);
 
             // retrieve data
             $key = \API_KEY_ABUSEIPDB;
