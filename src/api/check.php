@@ -20,7 +20,7 @@
         public function __construct(){
             parent::__construct("status");
 
-            $this->register_action("check", fn() => $this->send_success("Servizio disponibile"));
+            $this->register_action("check", fn() => $this->send_success("Servizio disponibile"), false);
 
             $this->route_action();
         }

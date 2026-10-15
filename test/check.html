@@ -7,11 +7,14 @@
 </head>
 <body>
     <h1>TEST PAGE - PHP AbuseIPDB API</h1>
+    <h3>CURRENT API: /check.php</h3>
     <p>Test your API to see if it works. Created by <a href="https://github.com/cqt470" target="_blank">zerokelvin</a>, have fun :)</p>
-    <div style="display:flex;flex-direction:column;width:160px;gap:16px">
-        <label for="ip">IP Address</label>
-        <input type="text" name="ip">
-        <button type="submit">Test</button>
+    <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;flex-direction:column;gap:16px;width:180px;">
+            <label for="ip">IP Address</label>
+            <input type="text" name="ip">
+            <button type="submit">Test</button>
+        </div>
         <p id="response"></p>
     </div>
     <script>
@@ -46,13 +49,13 @@
             const payload = {
                 "method": "POST",
                 "body": JSON.stringify({
+                    "action": "check",
                     "ip": val_ip,
                 })
             };
 
             const result = await get_data("http://localhost:8000/api/check.php", payload);
-
-            console.log(result.error)
+            response.innerHTML = `API Response: ${result.message}`;
         })
     </script>
 </body>
