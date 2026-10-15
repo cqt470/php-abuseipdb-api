@@ -50,7 +50,7 @@
             $webhook = new Webhook();
             $webhook::use_discord([
                 "title" => "New IP added to cache",
-                "description" => "The ip '$address' was added to the cache.",
+                "description" => "The ip \"$address\" was added to the cache.",
                 "color" => "#2ecc71",
                 "timestamp" => date("c")
             ]);
