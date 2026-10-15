@@ -30,7 +30,13 @@
             return false;
         }
 
-        public function add_entry(array $ip){
+        /**
+         * Adds an entry to the cache
+         *
+         * @param array $ip the IP, used as key
+         * @return void
+         */
+        public function add_entry(array $ip): void{
             $data = json_decode(file_get_contents($this->filepath));
 
             // cache hit
@@ -40,6 +46,13 @@
             file_put_contents($this->filepath, json_encode($data, JSON_UNESCAPED_SLASHES));
         }
 
+        /**
+         * Gets an entry based on a key and the value it has to have
+         *
+         * @param string $key the key
+         * @param string $value the searched value
+         * @return array|null
+         */
         public function get_entry(string $key, string $value): ?array{
             $data = json_decode(file_get_contents($this->filepath), true) ?? [];
             foreach($data as $ip){
