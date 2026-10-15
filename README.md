@@ -6,25 +6,19 @@ The project has been developed in the following environment:
 - OS: Debian (WSL)
 - PHP Version: 8.4.26
 
-## Endpoint base
+## Testing
+To test your API or application, you can check the examples i created in [test/](test/).
 
-[`src/includes/endpoint.php`](src/includes/endpoint.php) contiene la classe
-base per gli endpoint JSON. È autonoma e non richiede database, configurazioni
-globali o file `*-old.php`.
-
-Un endpoint può estenderla, registrare le proprie azioni e usare
-`route_action()` per il routing:
-
-```php
-require_once __DIR__ . "/includes/endpoint.php";
-
-final class IpEndpoint extends Endpoint
-{
-    public function __construct()
-    {
-        parent::__construct("ip");
-        $this->register_action("status", fn() => $this->send_success("OK"));
-        $this->route_action();
-    }
-}
+To start your server, `cd` into the `src` folder and then run
+```bash
+php -S localhost:8000 -t src/
+```
+You should see something like
+```bash
+user@PC-Name:Path/To/Directory$ php -S localhost:8000 -t src/
+[Thu Oct 15 07:44:20 2026] PHP 8.4.26 Development Server (http://localhost:8000) started
+[Thu Oct 15 07:44:25 2026] 127.0.0.1:53148 Accepted
+[Thu Oct 15 07:44:25 2026] 127.0.0.1:53148 [405]: GET /api/check.php
+[Thu Oct 15 07:44:25 2026] 127.0.0.1:53148 Closing
+[Thu Oct 15 07:44:25 2026] 127.0.0.1:53158 Accepted
 ```
