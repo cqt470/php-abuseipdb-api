@@ -65,6 +65,16 @@ use Exception;
 
             return $data;
         }
+
+        /**
+         * Validates an IP to see if it could be valid
+         *
+         * @param string $ip
+         * @return boolean
+         */
+        public static function validate_ip(string $ip): bool{
+            return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4);
+        }
     }
 
     $security = new Security;
