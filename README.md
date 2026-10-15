@@ -5,75 +5,69 @@
 ![GitHub last commit](https://img.shields.io/github/last-commit/cqt470/php-abuseipdb-api/master)
 ![GitHub stars](https://img.shields.io/github/stars/cqt470/php-abuseipdb-api)
 
-A self-hosted PHP API proxy for AbuseIPDB with local JSON caching and optional Discord webhook notifications.
+PHP AbuseIPDB API is a self-hosted proxy API for AbuseIPDB, written in PHP with a zero-dependency approach. It is designed to be dropped into a project quickly, while keeping your official AbuseIPDB key hidden behind a custom token.
 
 ## About this project
 
-- This project is experimental and in alpha status.
-- No stable release is available yet.
-- Main branch: `master`.
-- Current repository status is early stage (0 forks, 0 stars, 0 stable releases at the time this documentation was written).
-- This documentation and all .md files are AI-generated with human review. The source code is entirely hand-written by the author, with AI used only for minor bug fixing or testing.
+This repository is currently experimental and in alpha status. There is no stable release yet, and the main branch is `master`. At the time this documentation was prepared, the repository was still at an early stage with no stable release history.
+
+This documentation and all .md files are AI-generated with human review. The source code is entirely hand-written by the author, with AI used only for minor bug fixing or testing.
 
 ## Why use this project
 
-- Protects the official AbuseIPDB API key behind a custom proxy key.
-- Reduces AbuseIPDB token usage through local caching.
-- Sends Discord webhook notifications when a new IP is added to cache.
-- Uses zero external dependencies (no Composer and no framework).
-- Designed as a drop-in service that does not require large dependency trees.
-- Designed for Cloudflare Workers and similar serverless architectures.
+This project is meant for teams that want a simple and controlled proxy layer in front of AbuseIPDB. It focuses on practical deployment with minimal setup effort.
+
+- It hides your official AbuseIPDB key behind a custom API key.
+- It caches results locally to reduce AbuseIPDB token usage.
+- It can send Discord webhook notifications when new IPs are added to cache.
+- It avoids Composer and framework dependencies.
+- It is designed for serverless and edge integration patterns, including Cloudflare Workers.
 
 ## Requirements
 
-- PHP 8.1 or newer (developed and tested on PHP 8.4.26).
-- OpenSSL-enabled PHP runtime for HTTPS requests through `file_get_contents`.
+The codebase requires modern PHP because it uses enums and typed features. It was developed and tested on PHP 8.4.26.
+
+- PHP 8.1 or newer.
+- OpenSSL-enabled PHP runtime for HTTPS calls via `file_get_contents`.
 - Writable `/cache` directory for `cache/ips.json`.
-- No database or Redis required.
+- No SQL database and no Redis are required in the current design.
 
 ## Installation
 
-- Clone the repository:
+Clone the repository and prepare local configuration by creating `env.php` from the provided example.
 
 ```bash
 git clone https://github.com/cqt470/php-abuseipdb-api.git
 cd php-abuseipdb-api
-```
-
-- Copy the environment file:
-
-```bash
 cp example.env.php env.php
 ```
 
-`env.php` is a native PHP constants file, not a `.env` file parsed by external libraries.
+The configuration file is native PHP code with constants. It is not a `.env` file managed by external parsers.
 
 ### Configuration variables
 
+The following constants are defined in `env.php`.
+
 - `API_KEY_ABUSEIPDB`: Official AbuseIPDB API key.
-- `API_KEY_CUSTOM`: Custom key used to protect this proxy API.
-- `ENABLE_CACHING`: Keep `true` to reduce AbuseIPDB token usage.
-- `ENABLE_DISCORD_WEBHOOK`: Enable or disable Discord webhook notifications.
+- `API_KEY_CUSTOM`: Custom key used to authorize requests to this proxy.
+- `ENABLE_CACHING`: Recommended to keep `true` for lower AbuseIPDB token usage.
+- `ENABLE_DISCORD_WEBHOOK`: Enables or disables Discord notifications.
 - `URL_DISCORD_WEBHOOK`: Discord webhook URL.
-- `WEBHOOK_USERNAME`: Discord webhook username.
+- `WEBHOOK_USERNAME`: Display name for webhook messages.
 
 ## Start the server
 
-### Development
-
-Use the built-in PHP server for local development:
+For local development, use the PHP built-in server from the repository root.
 
 ```bash
 php -S localhost:8000 -t src/
 ```
 
-### Production
-
-- `php -S` is only for development.
-- In production, use Apache or Nginx and serve files from `/src`.
-- TODO: add complete production deployment documentation.
+For production, use a real web server such as Apache or Nginx and serve files from `/src`. The built-in PHP server is only for development, and full production deployment instructions are still a TODO.
 
 ## API endpoints
+
+The API currently exposes two POST endpoints, one for checks and one for reports.
 
 | Endpoint | Method | Path | Description |
 | --- | --- | --- | --- |
@@ -82,26 +76,23 @@ php -S localhost:8000 -t src/
 
 ### Check endpoint
 
-- Method: `POST`
-- Path: `/src/api/check.php`
-- Required parameters:
-  - `action` (string, must be `check`)
-  - `ip` (string, IPv4 currently supported)
-  - `token` (string, must match `API_KEY_CUSTOM`)
+The check endpoint validates the incoming IPv4 value and retrieves AbuseIPDB data through internal helpers and cache logic.
 
-#### cURL example
+Required parameters:
+
+- `action` (string, value `check`)
+- `ip` (string)
+- `token` (string, must match `API_KEY_CUSTOM`)
+
+Example cURL request:
 
 ```bash
 curl -X POST http://localhost:8000/api/check.php \
   -H "Content-Type: application/json" \
-  -d '{
-    "action": "check",
-    "ip": "8.8.8.8",
-    "token": "YOUR_CUSTOM_KEY"
-  }'
+  -d '{"action":"check","ip":"8.8.8.8","token":"YOUR_CUSTOM_KEY"}'
 ```
 
-#### JavaScript example
+Example JavaScript request:
 
 ```js
 await fetch("http://localhost:8000/api/check.php", {
@@ -115,7 +106,7 @@ await fetch("http://localhost:8000/api/check.php", {
 });
 ```
 
-#### JSON response example
+Example response:
 
 ```json
 {
@@ -131,32 +122,29 @@ await fetch("http://localhost:8000/api/check.php", {
 
 ### Report endpoint
 
-- Method: `POST`
-- Path: `/src/api/report.php`
-- Required parameters:
-  - `action` (string, must be `report`)
-  - `ip` (string, IPv4 currently supported)
-  - `categories` (array)
-  - `comment` (string)
-  - `token` (string, must match `API_KEY_CUSTOM`)
-- Optional parameters:
-  - `timestamp` (string, ISO 8601, defaults to server current timestamp)
+The report endpoint forwards report payloads to AbuseIPDB after local validation.
 
-#### cURL example
+Required parameters:
+
+- `action` (string, value `report`)
+- `ip` (string)
+- `categories` (array)
+- `comment` (string)
+- `token` (string, must match `API_KEY_CUSTOM`)
+
+Optional parameters:
+
+- `timestamp` (string, ISO 8601). If missing, server time is used.
+
+Example cURL request:
 
 ```bash
 curl -X POST http://localhost:8000/api/report.php \
   -H "Content-Type: application/json" \
-  -d '{
-    "action": "report",
-    "ip": "8.8.8.8",
-    "categories": [15],
-    "comment": "Suspicious traffic",
-    "token": "YOUR_CUSTOM_KEY"
-  }'
+  -d '{"action":"report","ip":"8.8.8.8","categories":[15],"comment":"Suspicious traffic","token":"YOUR_CUSTOM_KEY"}'
 ```
 
-#### JavaScript example
+Example JavaScript request:
 
 ```js
 await fetch("http://localhost:8000/api/report.php", {
@@ -172,7 +160,7 @@ await fetch("http://localhost:8000/api/report.php", {
 });
 ```
 
-#### JSON response example
+Example response:
 
 ```json
 {
@@ -190,15 +178,7 @@ await fetch("http://localhost:8000/api/report.php", {
 
 ## Integration examples
 
-### cURL
-
-- Use the cURL examples in the endpoint section for quick tests.
-
-### JavaScript (fetch)
-
-- Use `POST` with `Content-Type: application/json` and include `action`, `token`, and endpoint-specific fields.
-
-### PHP (`file_get_contents`)
+In addition to cURL and JavaScript, you can integrate the proxy directly from PHP.
 
 ```php
 $payload = json_encode([
@@ -221,61 +201,68 @@ $response = file_get_contents("http://localhost:8000/api/check.php", false, $con
 
 ## Known limitations
 
-- Cache has no TTL. IP data remains until the file is modified or removed.
-- CORS is open (`Access-Control-Allow-Origin: *`), suitable only for development.
-- IP validation currently supports only IPv4.
+This project is intentionally minimal and still under active iteration. The following limitations are known and documented.
+
+- Cache has no TTL.
+- CORS is open (`Access-Control-Allow-Origin: *`) and suitable only for development.
+- IP validation currently supports IPv4 only.
 - No server-side rate limiting.
 - No automatic retry if AbuseIPDB is unavailable.
-- No automated test suite configured. Current tests are manual HTML pages in `/test`.
-- No stable release.
+- No automated PHPUnit suite is configured.
+- Current manual tests are HTML pages in `/test`.
 
 ## Roadmap
 
+The roadmap is focused on hardening, maintainability, and production readiness.
+
 - Add TTL support to cache.
 - Add IPv6 validation support.
-- Implement a unified router (currently each endpoint is a separate file).
-- Replace the production section TODO with full deployment docs.
-- Add bearer token authentication instead of token in request body.
+- Implement a unified router.
+- Replace production setup TODO with complete deployment guidance.
+- Add bearer token authentication instead of body token.
 - Add automated tests with PHPUnit.
-- Add GitHub issue templates.
+- Add issue templates.
 - Add SQL database support in a future version.
-
-## Contributing
-
-- See [`CONTRIBUTING.md`](./CONTRIBUTING.md).
-- You can open an issue or submit a pull request.
-- Issue templates are not available yet and are planned.
 
 ## Security
 
 ### Security notes
 
-- API keys are stored in plain constants in [`env.php`](./env.php). This file is ignored by git in [`.gitignore`](./.gitignore), but it must never be committed.
-- In production, prefer a secrets manager or environment-level secret injection.
-- CORS is currently open and is a development limitation.
-- Endpoint authentication currently uses a plain token in request body (`token == API_KEY_CUSTOM`). Keep this service behind a reverse proxy or IP allowlist.
-- IP addresses are personal data under GDPR Article 4(1). This project stores IP data in [`cache/ips.json`](./cache/ips.json) and may send IP-related data through Discord webhook payloads.
+The current security model is intentionally simple and should be treated as WIP.
+
+- API keys are plain constants in [`env.php`](./env.php), which is ignored in [`.gitignore`](./.gitignore).
+- `env.php` must never be committed.
+- In production, secrets managers or environment-injected secrets are recommended.
+- Endpoint auth is currently `token == API_KEY_CUSTOM` in request body.
+- A reverse proxy and IP allowlist are strongly recommended in production.
+- IP addresses are personal data under GDPR Article 4(1).
+- IPs are persisted in [`cache/ips.json`](./cache/ips.json) and can appear in Discord webhook payloads.
 - GDPR reference: https://gdpr-info.eu/art-4-gdpr/
-- The codebase contains explicit WIP security TODOs in [`src/includes/security.php`](./src/includes/security.php), including robust IP source checks and potential string injection concerns. The project is not security audited.
+- Security-related TODOs are present in [`src/includes/security.php`](./src/includes/security.php), including more robust checks and potential string injection concerns.
 
 ### Security policy
 
-- For sensitive vulnerabilities, use GitHub Security Advisories on this repository.
-- If advisories are not available, contact the author at https://github.com/cqt470.
+Report sensitive vulnerabilities through GitHub Security Advisories for this repository. If advisories are unavailable, contact the author through https://github.com/cqt470.
+
+## Contributing
+
+Please read [`CONTRIBUTING.md`](./CONTRIBUTING.md) for workflow and contribution scope. Contributions are welcome through issues and pull requests.
 
 ## License
 
-- Licensed under the MIT License. See [`LICENSE`](./LICENSE).
-- Commercial use and modification are allowed.
-- Author attribution to Gioele Cairo (`cqt470`) must always be preserved.
+This project is distributed under the MIT License. See [`LICENSE`](./LICENSE) for full text.
+
+Commercial use and modification are allowed, but attribution to Gioele Cairo (`cqt470`) must always be preserved.
 
 ## Internal documentation
 
-- Endpoint docs: [`docs/src/api/check.md`](./docs/src/api/check.md), [`docs/src/api/report.md`](./docs/src/api/report.md)
-- Include docs:
-  - [`docs/src/includes/cache.md`](./docs/src/includes/cache.md)
-  - [`docs/src/includes/endpoint.md`](./docs/src/includes/endpoint.md)
-  - [`docs/src/includes/enums.md`](./docs/src/includes/enums.md)
-  - [`docs/src/includes/index.md`](./docs/src/includes/index.md)
-  - [`docs/src/includes/security.md`](./docs/src/includes/security.md)
-  - [`docs/src/includes/webhook.md`](./docs/src/includes/webhook.md)
+Detailed source documentation is available in:
+
+- [`docs/src/api/check.md`](./docs/src/api/check.md)
+- [`docs/src/api/report.md`](./docs/src/api/report.md)
+- [`docs/src/includes/cache.md`](./docs/src/includes/cache.md)
+- [`docs/src/includes/endpoint.md`](./docs/src/includes/endpoint.md)
+- [`docs/src/includes/enums.md`](./docs/src/includes/enums.md)
+- [`docs/src/includes/index.md`](./docs/src/includes/index.md)
+- [`docs/src/includes/security.md`](./docs/src/includes/security.md)
+- [`docs/src/includes/webhook.md`](./docs/src/includes/webhook.md)

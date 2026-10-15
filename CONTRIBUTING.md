@@ -1,41 +1,35 @@
 # Contributing
 
-Thank you for your interest in contributing to `php-abuseipdb-api`.
+Thank you for contributing to `php-abuseipdb-api`. This project is in alpha, and focused, high-quality pull requests are particularly valuable.
 
 ## Pull request workflow
 
+The repository currently uses a standard fork-and-PR flow based on the `master` branch.
+
 - Fork the repository.
-- Create a feature branch from `master`.
-- Make focused changes with clear commit messages.
-- Push your branch to your fork.
+- Create a branch from `master`.
+- Apply focused changes with clear commits.
+- Push the branch to your fork.
 - Open a pull request against `master`.
-- Describe the change scope, motivation, and test steps.
+- Document motivation, scope, and test steps in the PR description.
 
 ## Code style
 
-- Target style standard: PSR-12.
-- No linter is currently configured in this repository.
-- Keep changes small and consistent with the existing coding style.
+PSR-12 is the target style for PHP source files. No linter is configured in the repository yet, so contributors should align manually with existing formatting and naming patterns.
 
-## Bug reports
+## Reporting bugs
 
-- Open a GitHub issue with:
-  - A clear title.
-  - Reproduction steps.
-  - Expected behavior.
-  - Actual behavior.
-  - Environment details (PHP version and runtime context).
+Use GitHub Issues for bug reports. A good bug report should include reproducible steps, expected behavior, actual behavior, and environment context such as PHP version and runtime setup.
 
-## Contribution priorities
+## Current contribution priorities
 
-The roadmap is open, and contributions are welcome in these areas:
+The current roadmap is open. Contributions are especially welcome in these areas:
 
 - PHPUnit automated tests.
-- IPv6 validation support.
-- Cache TTL implementation.
+- IPv6 validation.
+- Cache TTL support.
 - Unified router implementation.
 
-## Issues and templates
+## Issue templates
 
-- Issue templates are not available yet.
-- Issue templates are planned in a future update.
+Issue templates are not available yet. They are planned for a future update.
