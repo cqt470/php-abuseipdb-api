@@ -1,4 +1,6 @@
 <?php
+    namespace Zexa\Includes;
+    
     class Cache{
         private string $filepath;
 
