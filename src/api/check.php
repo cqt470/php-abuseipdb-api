@@ -11,7 +11,7 @@
     header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
     header("Access-Control-Allow-Headers: Content-Type");
 
-    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    if($_SERVER['REQUEST_METHOD'] === 'OPTIONS'){
         http_response_code(204);
         exit;
     }
@@ -20,9 +20,14 @@
         public function __construct(){
             parent::__construct("status");
 
-            $this->register_action("check", fn() => $this->send_success("Servizio disponibile"), false);
+            $ip = $this->get_parameter("ip", "string");
+            $this->register_action("check", fn() => $this->check(), false);
 
             $this->route_action();
+        }
+
+        private function check(){
+            $this->send_success("yoooo");
         }
     }
 

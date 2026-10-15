@@ -24,12 +24,13 @@
         async function get_data(url, payload){
             try{
                 const response = await fetch(url, payload);
+                const result = await response.json();
+
                 if(!response.ok){
-                    return {"error": response.status};
+                    return {"message": result?.message, "code": response.status};
                 }
 
-                const result = await response.json();
-                return {"message": result?.message, "content": result};
+                return {"message": result?.message, "content": result, "code": response.status};
             }catch(error){
                 return {"error": error.message, "type": "trycatch"};
             }
@@ -55,7 +56,7 @@
             };
 
             const result = await get_data("http://localhost:8000/api/check.php", payload);
-            response.innerHTML = `API Response: ${result.message}`;
+            response.innerHTML = `API Response: ${result.message} (HTTP: ${result.code})`;
         })
     </script>
 </body>
