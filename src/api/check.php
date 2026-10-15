@@ -18,11 +18,15 @@
 
     final class StatusEndpoint extends Endpoint{
         private string $ip;
+        private string $token;
 
         public function __construct(){
             parent::__construct("status");
 
             $this->ip = $this->get_parameter("ip", "string");
+            $this->token = $this->get_parameter("token", "string");
+
+            if($this->token != \API_KEY_CUSTOM) $this->send_error("Unauthenticated.", 403);
 
             $this->register_action("check", fn() => $this->check(), false);
 
