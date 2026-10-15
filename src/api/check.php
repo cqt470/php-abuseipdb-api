@@ -5,7 +5,6 @@
 
     use Endpoint;
     use Zexa\Includes\Security;
-    use Zexa\Includes\Webhook;
 
     // TODO: add in router later
     header("Access-Control-Allow-Origin: *");
@@ -17,7 +16,7 @@
         exit;
     }
 
-    final class StatusEndpoint extends Endpoint{
+    final class CheckEndpoint extends Endpoint{
         private string $ip;
         private string $token;
 
@@ -44,4 +43,4 @@
         }
     }
 
-    new StatusEndpoint();
+    new CheckEndpoint();
