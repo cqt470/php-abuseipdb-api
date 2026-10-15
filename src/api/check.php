@@ -5,6 +5,7 @@
 
     use Endpoint;
     use Zexa\Includes\Security;
+    use Zexa\Includes\Webhook;
 
     // TODO: add in router later
     header("Access-Control-Allow-Origin: *");
@@ -35,9 +36,16 @@
 
         private function check(){
             if(!Security::validate_ip($this->ip)) $this->send_error("The IP doesn't seem to be valid.");
+
+            Webhook::use_discord([
+                "title" => "New IP added to cache",
+                "description" => "The ip '1234' was added to the cache.",
+                "color" => "#2ecc71"
+            ]);
             
             $info = Security::get_ip_info($this->ip);
             $this->add_response_parameter("info", $info);
+
             $this->send_success("ok");
         }
     }
