@@ -1,6 +1,8 @@
 <?php
     namespace Zexa\Includes;
-    
+
+    include_once __DIR__."/index.php";
+
     class Cache{
         private string $filepath;
 
@@ -43,6 +45,15 @@
 
             // cache hit
             if($this->check_for_entry("ipAddress", $ip["data"]["ipAddress"])) return;
+            $address = $ip["data"]["ipAddress"];
+
+            $webhook = new Webhook();
+            $webhook::use_discord([
+                "title" => "New IP added to cache",
+                "description" => "The ip '$address' was added to the cache.",
+                "color" => "#2ecc71",
+                "timestamp" => date("c")
+            ]);
 
             $data[] = $ip["data"];
             file_put_contents($this->filepath, json_encode($data, JSON_UNESCAPED_SLASHES));
