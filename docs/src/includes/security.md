@@ -41,5 +41,4 @@ $isValid = Security::validate_ip("8.8.8.8");
 
 - TODO in source: improve robustness of client IP source checks.
 - TODO in source: potential string injection concern in enum error path.
-- `validate_ip` uses `FILTER_VALIDATE_IP` with `FILTER_FLAG_IPV4`, so IPv6 is currently unsupported.
 - Cache persistence has no TTL expiration logic.

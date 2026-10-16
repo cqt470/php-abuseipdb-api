@@ -26,7 +26,6 @@ Use GitHub Issues for bug reports. A good bug report should include reproducible
 The current roadmap is open. Contributions are especially welcome in these areas:
 
 - PHPUnit automated tests.
-- IPv6 validation.
 - Cache TTL support.
 - Unified router implementation.
 

@@ -216,7 +216,6 @@ This project is intentionally minimal and still under active iteration. The foll
 The roadmap is focused on hardening, maintainability, and production readiness.
 
 - Add TTL support to cache.
-- Add IPv6 validation support.
 - Implement a unified router.
 - Replace production setup TODO with complete deployment guidance.
 - Add bearer token authentication instead of body token.
