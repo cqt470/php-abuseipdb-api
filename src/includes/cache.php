@@ -1,6 +1,8 @@
 <?php
     namespace Zexa\Includes;
 
+use WeakReference;
+
     include_once __DIR__."/index.php";
 
     class Cache{
@@ -28,6 +30,9 @@
         public function check_for_entry(string $key, string $value): bool{
             $data = json_decode(file_get_contents($this->filepath), true) ?? [];
             foreach($data as $ip){
+                if($ip["added_at"] < (time() - \CACHE_TTL)){
+                    // TODO: rimuovere la entry e ritornare false
+                }
                 if($ip[$key] == $value) return true;
             }
 
@@ -55,6 +60,7 @@
                 "timestamp" => date("c")
             ]);
 
+            $ip["data"]["added_at"] = time();
             $data[] = $ip["data"];
             file_put_contents($this->filepath, json_encode($data, JSON_UNESCAPED_SLASHES));
         }
