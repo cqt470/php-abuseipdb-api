@@ -9,31 +9,26 @@
 
     class Security{
         /**
-         * Returns the IP given by ifconfig.me/api
+         * Gets the real IP of the user safely.
+         * Supports Cloudflare integration and standard direct connections.
          *
          * @return string
          */
-        public static function research_ip(): string{
-            return file_get_contents("https://ifconfig.me/ip");
-        }
+        public static function get_ip(): string{
+            // cloudflare header
+            if(!empty($_SERVER["HTTP_CF_CONNECTING_IP"])){
+                $ip = $_SERVER["HTTP_CF_CONNECTING_IP"];
+                if(Security::validate_ip($ip)) return $ip;
+            }
 
-        /**
-         * Gets the IP of the user.
-         *
-         * @param frequency_ip_search $research always check for the IP using ifconfig, or only when not available?
-         * @return string
-         */
-        public static function get_ip(frequency_ip_search $research = frequency_ip_search::Fallback): string{
-            if($research == frequency_ip_search::Always) return Security::research_ip();
+            // PHP header
+            if(!empty($_SERVER["REMOTE_ADDR"])){
+                $ip = $_SERVER["REMOTE_ADDR"];
+                if(!Security::validate_ip($ip)) return $ip;
+            }
 
-            // TODO: use more robust checks!
-            $ip = $_SERVER["HTTP_CLIENT_IP"] ?? null;
-
-            // TODO: potential string injection
-            if($research != frequency_ip_search::Fallback) throw new Exception("Illegal enum value \"$research\"");
-            if($ip) return $ip;
-
-            return Security::research_ip();
+            // fallback
+            return "127.0.0.1";
         }
 
         /**
