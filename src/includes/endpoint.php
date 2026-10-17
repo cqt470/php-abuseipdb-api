@@ -210,7 +210,7 @@
                         continue;
                     }
 
-                    $this->send_error("Il campo {$name} non è stato trovato.", 400);
+                    $this->send_error("The required field \"$name\" is missing.", 400);
                 }
 
                 if (!$this->matches_type($this->request_data[$name], $type)) {
