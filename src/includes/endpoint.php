@@ -1,6 +1,7 @@
 <?php
 
     include_once __DIR__."/../../env.php";
+    include_once __DIR__."/logger.php";
 
     /**
      * Classe base per la gestione degli endpoint API JSON.
@@ -48,6 +49,8 @@
          */
         protected ?array $user = null;
 
+        protected Logger $logger;
+
         /**
          * Inizializza l'endpoint e legge il body JSON della richiesta.
          *
@@ -63,6 +66,7 @@
         ){
             $this->endpoint_name = $endpoint_name;
             $this->handle_cors();
+            $this->logger = new Logger(__DIR__."/../../logs/");
 
             if ($is_post_needed && ($_SERVER["REQUEST_METHOD"] ?? "GET") !== "POST") {
                 $this->send_error("Metodo POST necessario.", 405);
