@@ -5,6 +5,7 @@
 
     use DateTime;
     use Endpoint;
+    use Zexa\Includes\log_priority;
     use Zexa\Includes\Security;
 
     final class AbuseIPDBEndpoint extends Endpoint{
@@ -15,8 +16,11 @@
 
             $this->token = $this->get_token() ?? $this->get_parameter("token", "string", true) ?? null;
             if(!$this->token) $this->send_error("Unauthenticated.", 401);
-            
-            if(\ENVIRONMENT != "dev" && !hash_equals(\API_KEY_CUSTOM, $this->token)) $this->send_error("Unauthorized.", 403);
+
+            if(\ENVIRONMENT != "dev" && !hash_equals(\API_KEY_CUSTOM, $this->token)){
+                $this->logger->log(log_priority::debug, "ciao");
+                $this->send_error("Unauthorized.", 403);
+            }
 
             $this->register_action("check", fn() => $this->check(), false);
             $this->register_action("report", fn() => $this->report(), false);
