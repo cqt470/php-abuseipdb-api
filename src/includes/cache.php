@@ -1,7 +1,7 @@
 <?php
     namespace Zexa\Includes;
 
-use WeakReference;
+    use Exception;
 
     include_once __DIR__."/index.php";
 
@@ -14,7 +14,7 @@ use WeakReference;
          * @param string $filepath the filephat of the cache to handle
          */
         public function __construct(string $filepath){
-            if(!file_exists($filepath)) file_put_contents($filepath, "");
+            if(!file_exists($filepath)) throw new Exception("File doesn't exist.");
 
             $this->filepath = $filepath;
         }
