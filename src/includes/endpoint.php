@@ -97,6 +97,16 @@
          * @return void
          */
         protected function route_action(string $action_param_name = "action"): void{
+            if($_SERVER['REQUEST_METHOD'] === 'OPTIONS'){
+                http_response_code(204);
+                exit;
+            }
+            
+            // CORS configs
+            header("Access-Control-Allow-Origin: *");
+            header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
+            header("Access-Control-Allow-Headers: Content-Type");
+
             $action = $this->request_data[$action_param_name] ?? null;
 
             if (!is_string($action) || $action === "") {

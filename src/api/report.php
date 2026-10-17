@@ -3,19 +3,9 @@
     
     include_once __DIR__."/../includes/index.php";
 
-use DateTime;
-use Endpoint;
+    use DateTime;
+    use Endpoint;
     use Zexa\Includes\Security;
-
-    // TODO: add in router later
-    header("Access-Control-Allow-Origin: *");
-    header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
-    header("Access-Control-Allow-Headers: Content-Type");
-
-    if($_SERVER['REQUEST_METHOD'] === 'OPTIONS'){
-        http_response_code(204);
-        exit;
-    }
 
     final class ReportEndpoint extends Endpoint{
         private string $ip;
