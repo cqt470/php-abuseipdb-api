@@ -35,7 +35,7 @@
 
                     Webhook::use_discord([
                         "title" => "TTL Reached",
-                        "description" => "The IP Address \"$value\" has expired and has been deleted from cache.",
+                        "description" => "The IP Address `$value` has expired and has been deleted from cache.",
                         "color" => "#444444"
                     ]);
 
@@ -63,7 +63,7 @@
             $webhook = new Webhook();
             $webhook::use_discord([
                 "title" => "New IP added to cache",
-                "description" => "The ip \"$address\" was added to the cache.",
+                "description" => "The ip `$address` was added to the cache.",
                 "color" => "#2ecc71",
                 "timestamp" => date("c")
             ]);

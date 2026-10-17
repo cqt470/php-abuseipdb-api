@@ -7,6 +7,7 @@
     use Endpoint;
     use Zexa\Includes\log_priority;
     use Zexa\Includes\Security;
+    use Zexa\Includes\Webhook;
 
     final class AbuseIPDBEndpoint extends Endpoint{
         private ?string $token;
@@ -19,7 +20,15 @@
 
             if(\ENVIRONMENT != "dev" && !hash_equals(\API_KEY_CUSTOM, $this->token)){
                 $hash = Security::sha256($this->token);
-                $this->logger->log("auth", log_priority::debug, "Authentication to /abuseipdb API failed via token. Hash: $hash", true);
+                $this->logger->log("auth", log_priority::warning, "Authentication to /abuseipdb API failed via token. Hash: $hash", true);
+                $ip = Security::get_ip();
+
+                Webhook::use_discord([
+                    "title" => "Failed authentication",
+                    "description" => "IP `$ip` failed to authenticate himself at endpoint /abuseipdb via token, its hash is: `$hash`.",
+                    "color" => "#ff0000"
+                ]);
+
                 $this->send_error("Unauthorized.", 403);
             }
 
