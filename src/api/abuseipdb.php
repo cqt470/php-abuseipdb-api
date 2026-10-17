@@ -15,6 +15,8 @@
 
             $this->token = $this->get_parameter("token", "string", true);
 
+            echo json_encode($this->get_token(), JSON_UNESCAPED_SLASHES);
+
             /*
             $parameters = $this->get_parameters([
                 "ip" => "string",

@@ -50,6 +50,10 @@
 
             const payload = {
                 "method": "POST",
+                "headers": {
+                    "Content-Type": "application/json",
+                    "Authorization": "test"
+                },
                 "body": JSON.stringify({
                     "action": "hello",
                     "ip": val_ip,
