@@ -46,7 +46,7 @@
             $info = Security::get_ip_info($ip);
             $this->add_response_parameter("info", $info);
 
-            $this->logger->log("api", log_priority::info, "IP succesfully checked.", true);
+            $this->logger->log("api", log_priority::info, "IP succesfully checked", true);
             $this->send_success("ok");
         }
 

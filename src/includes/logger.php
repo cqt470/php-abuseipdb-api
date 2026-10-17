@@ -20,7 +20,7 @@
             $_priority = strtoupper($priority->value);
             $method = $_SERVER["REQUEST_METHOD"];
             $row = "[$_priority] $time - $method - $text";
-            if($include_ip) $row .= " (IP ".Security::get_ip().")";
+            if($include_ip) $row .= " (Origin: ".Security::get_ip().")";
             //if(str_contains($filepath, "check")) var_dump($filepath, is_dir($this->folderpath), is_writable($this->folderpath));
 
             file_put_contents($filepath, "$row\n", FILE_APPEND);
