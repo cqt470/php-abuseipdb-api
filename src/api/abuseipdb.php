@@ -15,23 +15,7 @@
 
             $this->token = $this->get_token() ?? $this->get_parameter("token", "string", true) ?? null;
             if(!$this->token) $this->send_error("Unauthenticated.", 401);
-
-            /*
-            $parameters = $this->get_parameters([
-                "ip" => "string",
-                "categories" => "array",
-                "comment" => "string",
-                "timestamp" => ["type" => "string", "optional" => true],
-                "token" => "string",
-            ]);
-
-            $this->ip = $parameters["ip"];
-            $this->categories = $parameters["categories"];
-            $this->comment = $parameters["comment"];
-            $this->timestamp = $parameters["timestamp"] ?? date("c");
-            $this->token = $parameters["token"];
-
-            */
+            
             if(\ENVIRONMENT != "dev" && !hash_equals(\API_KEY_CUSTOM, $this->token)) $this->send_error("Unauthorized.", 403);
 
             $this->register_action("check", fn() => $this->check(), false);
@@ -57,7 +41,6 @@
                 "categories" => "array",
                 "comment" => "string",
                 "timestamp" => ["type" => "string", "optional" => true],
-                "token" => "string",
             ]);
 
             $ip = $parameters["ip"];
