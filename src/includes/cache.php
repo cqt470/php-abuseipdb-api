@@ -54,7 +54,7 @@
          * @return void
          */
         public function add_entry(array $ip): void{
-            $data = json_decode(file_get_contents($this->filepath));
+            $data = json_decode(file_get_contents($this->filepath), true);
 
             // cache hit
             if($this->check_for_entry("ipAddress", $ip["data"]["ipAddress"])) return;
