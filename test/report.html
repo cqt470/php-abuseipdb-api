@@ -68,7 +68,7 @@
                 })
             };
 
-            const result = await get_data("http://localhost:8000/api/report.php", payload);
+            const result = await get_data("http://localhost:8000/api/abuseipdb.php", payload);
             response.innerHTML = `API Response: ${result.message} (HTTP: ${result.code})`;
             if(result?.parameters?.info)response.innerHTML += `<br><pre>${JSON.stringify(result?.parameters?.info, null, 2)}</pre>`;
         })
