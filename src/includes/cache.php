@@ -1,15 +1,14 @@
 <?php
     namespace Zexa\Includes;
 
+    include_once __DIR__."/index.php";
+
     use Exception;
     use Logger;
 
-    include_once __DIR__."/index.php";
-
-    $logger = new Logger(__DIR__."/../../logs/");
-
     class Cache{
         private string $filepath;
+        private Logger $logger;
 
         /**
          * Manages the cache
@@ -18,6 +17,7 @@
          */
         public function __construct(string $filepath){
             if(!file_exists($filepath)) throw new Exception("File doesn't exist.");
+            $this->logger = new Logger(__DIR__."/../../logs");
 
             $this->filepath = $filepath;
         }
@@ -31,14 +31,12 @@
          * @return boolean
          */
         public function check_for_entry(string $key, string $value): bool{
-            global $logger;
-
             $data = json_decode(file_get_contents($this->filepath), true) ?? [];
             foreach($data as $ip){
                 if($ip["added_at"] < (time() - \CACHE_TTL)){
                     $this->delete_entry($key, $value);
 
-                    $logger->log("cache", log_priority::info, "IP expired ($value).");
+                    $this->logger->log("cache", log_priority::info, "IP expired ($value).");
                     Webhook::use_discord([
                         "title" => "TTL Reached",
                         "description" => "The IP Address `$value` has expired and has been deleted from cache.",
@@ -67,12 +65,12 @@
 
             // cache hit
             if($this->check_for_entry("ipAddress", $ip["data"]["ipAddress"])){
-                $logger->log("log", log_priority::info, "IP cache hit (".$ip["data"]["ipAddress"].").");
+                $this->logger->log("cache", log_priority::info, "IP cache hit (".$ip["data"]["ipAddress"].").");
                 return;
             };
             $address = $ip["data"]["ipAddress"];
 
-            $logger->log("cache", log_priority::info, "IP added to cache ($address).");
+            $this->logger->log("cache", log_priority::info, "IP added to cache ($address).");
             $webhook = new Webhook();
             $webhook::use_discord([
                 "title" => "New IP added to cache",
