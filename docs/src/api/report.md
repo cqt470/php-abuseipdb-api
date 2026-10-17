@@ -1,81 +1,64 @@
-# report.php
+# Report action
 
-Usage documentation for [`src/api/report.php`](../../../src/api/report.php).
+Reference for the `report` action handled by [`src/api/abuseipdb.php`](../../../src/api/abuseipdb.php).
 
 ## Purpose
 
-`report.php` exposes the report endpoint that validates input, sends a report to AbuseIPDB, and returns a fixed JSON response structure.
+The `report` action validates inputs and forwards a report request to AbuseIPDB.
 
-## Inclusion
-
-The endpoint includes the shared include index:
-
-```php
-include_once __DIR__ . "/../includes/index.php";
-```
-
-## HTTP endpoint
+## Endpoint and routing
 
 - Method: `POST`
-- Path: `/src/api/report.php`
-- CORS headers are currently open for development.
+- Path: `/api/abuseipdb.php`
+- Required body field: `action` with value `report`
 
-## Required and optional parameters
+## Authentication
 
-Required JSON body parameters:
+You must send a token using either:
 
-- `action` (string): must be `report`.
-- `ip` (string): IPv4 address.
-- `categories` (array): AbuseIPDB category IDs.
-- `comment` (string): report comment text.
-- `token` (string): must match `API_KEY_CUSTOM`.
+- `Authorization` header with bearer token.
+- `token` in JSON body.
 
-Optional JSON body parameters:
+When `ENVIRONMENT === "dev"`, token comparison is skipped, but token presence is still required.
 
-- `timestamp` (string): ISO 8601 date-time. Defaults to server-side current timestamp.
+## Request fields
 
-## Exposed class and methods
+Required:
 
-- Class: `Zexa\Endpoints\ReportEndpoint`
-- Constructor:
-  - `__construct()`
-- Internal action handler:
-  - `report()`
+- `action` (string): `report`
+- `ip` (string)
+- `categories` (array)
+- `comment` (string)
 
-## Minimal usage example
+Optional:
+
+- `timestamp` (string, ISO 8601)
+- `token` (string, optional if bearer header is used)
+
+## Example
 
 ```bash
-curl -X POST http://localhost:8000/api/report.php \
+curl -X POST http://localhost:8000/api/abuseipdb.php \
   -H "Content-Type: application/json" \
-  -d '{"action":"report","ip":"8.8.8.8","categories":[15],"comment":"Suspicious traffic","token":"YOUR_CUSTOM_KEY"}'
+  -H "Authorization: ******" \
+  -d '{"action":"report","ip":"8.8.8.8","categories":[15],"comment":"Suspicious traffic"}'
 ```
 
-## Response example
+## Response shape
 
 ```json
 {
   "message": "ok",
   "success": true,
   "parameters": {
-    "info": {
-      "data": {
-        "ipAddress": "8.8.8.8"
-      }
-    }
+    "info": {}
   }
 }
 ```
 
-## Internal dependencies
+## Dependencies
 
 - [`src/includes/index.php`](../../../src/includes/index.php)
 - [`src/includes/endpoint.php`](../../../src/includes/endpoint.php)
 - [`src/includes/security.php`](../../../src/includes/security.php)
-- [`env.php`](../../../env.php)
-
-## Known limitations and TODOs
-
-- TODO in source: router integration is pending.
-- CORS is open (`*`) and currently intended for development.
-- Validation supports IPv4 only.
-- No automatic retry logic if upstream AbuseIPDB report requests fail.
+- `env.php` (runtime local file created from `example.env.php`)

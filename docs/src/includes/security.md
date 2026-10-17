@@ -1,44 +1,47 @@
 # security.php
 
-Usage documentation for [`src/includes/security.php`](../../../src/includes/security.php).
+Reference for [`src/includes/security.php`](../../../src/includes/security.php).
 
 ## Purpose
 
-`Security` provides helper methods for IP retrieval, IP validation, AbuseIPDB check calls, and cache integration.
+`Security` provides helper methods for client IP resolution, IP validation, and AbuseIPDB data retrieval.
 
-## Inclusion
+## Public static methods
 
-```php
-include_once __DIR__ . "/../../../src/includes/security.php";
-```
+- `get_ip(): string`
+- `get_ip_info(?string $ip = null, bool $skip_cache = false): ?array`
+- `validate_ip(string $ip): bool`
 
-## Exposed class and public methods
+## Method behavior
 
-- Class: `Zexa\Includes\Security`
-- Public static methods:
-  - `research_ip(): string`
-  - `get_ip(frequency_ip_search $research = frequency_ip_search::Fallback): string`
-  - `get_ip_info(?string $ip = null, bool $skip_cache = false): ?array`
-  - `validate_ip(string $ip): bool`
+`get_ip()` resolves IP in this order:
 
-## Minimal usage example
+1. `HTTP_CF_CONNECTING_IP` (if present and valid)
+2. `REMOTE_ADDR` (if present and valid)
+3. fallback `127.0.0.1`
+
+`get_ip_info()`:
+
+- loads cache from `cache/ips.json`
+- optionally returns cached data when enabled
+- performs an AbuseIPDB `check` request via `file_get_contents`
+- stores retrieved data in cache
+
+## Example
 
 ```php
 use Zexa\Includes\Security;
 
 $info = Security::get_ip_info("8.8.8.8");
-$isValid = Security::validate_ip("8.8.8.8");
+$valid = Security::validate_ip("8.8.8.8");
 ```
 
-## Internal dependencies
+## Dependencies
 
 - [`src/includes/index.php`](../../../src/includes/index.php)
 - [`src/includes/cache.php`](../../../src/includes/cache.php)
-- [`src/includes/enums.php`](../../../src/includes/enums.php)
-- [`env.php`](../../../env.php)
+- `env.php` (runtime local file created from `example.env.php`)
 
-## Known limitations and TODOs
+## Known caveat
 
-- TODO in source: improve robustness of client IP source checks.
-- TODO in source: potential string injection concern in enum error path.
-- Cache persistence has no TTL expiration logic.
+`get_ip()` currently trusts `HTTP_CF_CONNECTING_IP` whenever present and does not verify that `REMOTE_ADDR` belongs to Cloudflare ranges.

@@ -1,76 +1,56 @@
-# check.php
+# Check action
 
-Usage documentation for [`src/api/check.php`](../../../src/api/check.php).
+Reference for the `check` action handled by [`src/api/abuseipdb.php`](../../../src/api/abuseipdb.php).
 
 ## Purpose
 
-`check.php` exposes the check endpoint that validates an IPv4 address, queries AbuseIPDB through internal utilities, and returns a fixed JSON response structure.
+The `check` action validates the submitted IP and forwards a check request to AbuseIPDB through `Security::get_ip_info()`.
 
-## Inclusion
-
-The endpoint includes the shared include index:
-
-```php
-include_once __DIR__ . "/../includes/index.php";
-```
-
-## HTTP endpoint
+## Endpoint and routing
 
 - Method: `POST`
-- Path: `/src/api/check.php`
-- CORS headers are currently open for development.
+- Path: `/api/abuseipdb.php`
+- Required body field: `action` with value `check`
 
-## Required and optional parameters
+## Authentication
 
-Required JSON body parameters:
+You must send a token using either:
 
-- `action` (string): must be `check`.
-- `ip` (string): IPv4 address.
-- `token` (string): must match `API_KEY_CUSTOM`.
+- `Authorization` header with bearer token.
+- `token` in JSON body.
 
-Optional parameters:
+When `ENVIRONMENT === "dev"`, token comparison is skipped, but token presence is still required.
 
-- None.
+## Request fields
 
-## Exposed class and methods
+- `action` (string, required): `check`
+- `ip` (string, required): target IP
+- `token` (string, optional if bearer header is used)
 
-- Class: `Zexa\Endpoints\CheckEndpoint`
-- Constructor:
-  - `__construct()`
-- Internal action handler:
-  - `check()`
-
-## Minimal usage example
+## Example
 
 ```bash
-curl -X POST http://localhost:8000/api/check.php \
+curl -X POST http://localhost:8000/api/abuseipdb.php \
   -H "Content-Type: application/json" \
-  -d '{"action":"check","ip":"8.8.8.8","token":"YOUR_CUSTOM_KEY"}'
+  -H "Authorization: ******" \
+  -d '{"action":"check","ip":"8.8.8.8"}'
 ```
 
-## Response example
+## Response shape
 
 ```json
 {
   "message": "ok",
   "success": true,
   "parameters": {
-    "info": {
-      "ipAddress": "8.8.8.8"
-    }
+    "info": {}
   }
 }
 ```
 
-## Internal dependencies
+## Dependencies
 
 - [`src/includes/index.php`](../../../src/includes/index.php)
 - [`src/includes/endpoint.php`](../../../src/includes/endpoint.php)
 - [`src/includes/security.php`](../../../src/includes/security.php)
-- [`env.php`](../../../env.php)
-
-## Known limitations and TODOs
-
-- TODO in source: router integration is pending.
-- CORS is open (`*`) and currently intended for development.
-- Validation supports IPv4 only because it relies on [`src/includes/security.php`](../../../src/includes/security.php).
+- `env.php` (runtime local file created from `example.env.php`)

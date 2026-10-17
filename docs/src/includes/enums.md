@@ -1,37 +1,12 @@
 # enums.php
 
-Usage documentation for [`src/includes/enums.php`](../../../src/includes/enums.php).
+Reference for [`src/includes/enums.php`](../../../src/includes/enums.php).
 
-## Purpose
+## Current state
 
-`enums.php` defines shared enums used by include classes.
+`enums.php` currently contains only the namespace declaration and does not define any enums.
 
-## Inclusion
+## Impact
 
-```php
-include_once __DIR__ . "/../../../src/includes/enums.php";
-```
-
-## Exposed enum
-
-- Enum: `Zexa\Includes\frequency_ip_search`
-- Cases:
-  - `Fallback`
-  - `Always`
-
-## Minimal usage example
-
-```php
-use Zexa\Includes\frequency_ip_search;
-
-$mode = frequency_ip_search::Fallback;
-```
-
-## Internal dependencies
-
-- No internal file dependencies.
-
-## Known limitations and TODOs
-
-- No known TODO in this file.
-- Project minimum PHP is 8.1 because enums are required.
+- There are no public enum types to import from this file at the moment.
+- The repository still requires PHP 8.1+ due to typed features used elsewhere.

@@ -1,40 +1,41 @@
 # webhook.php
 
-Usage documentation for [`src/includes/webhook.php`](../../../src/includes/webhook.php).
+Reference for [`src/includes/webhook.php`](../../../src/includes/webhook.php).
 
 ## Purpose
 
-`Webhook` sends Discord webhook embeds when enabled.
+`Webhook` sends Discord embeds when webhook support is enabled.
 
-## Inclusion
+## Public API
 
-```php
-include_once __DIR__ . "/../../../src/includes/webhook.php";
-```
+- `use_discord(array $embed_data = []): void`
 
-## Exposed class and public methods
+## Expected payload fields
 
-- Class: `Zexa\Includes\Webhook`
-- Public static methods:
-  - `use_discord(array $embed_data = []): void`
+`$embed_data` supports:
 
-## Minimal usage example
+- `title` (string|null)
+- `description` (string|null)
+- `color` (int|string|null)
+- `timestamp` (string|null)
+
+If `timestamp` is omitted, the method uses current ISO 8601 time.
+
+## Example
 
 ```php
 Zexa\Includes\Webhook::use_discord([
     "title" => "New IP added to cache",
     "description" => "IP 8.8.8.8 stored",
     "color" => "#2ecc71",
-    "timestamp" => date("c")
 ]);
 ```
 
-## Internal dependencies
+## Dependencies
 
-- [`env.php`](../../../env.php)
+- `env.php` (runtime local file created from `example.env.php`)
 
-## Known limitations and TODOs
+## Error handling
 
-- No explicit TODO in this file.
-- Throws exceptions on transport failure and non-2xx responses.
-- Requires valid `URL_DISCORD_WEBHOOK` and `ENABLE_DISCORD_WEBHOOK` configuration.
+- Returns early when `ENABLE_DISCORD_WEBHOOK` is `false`.
+- Throws exceptions when the request fails or Discord responds with a non-2xx status.

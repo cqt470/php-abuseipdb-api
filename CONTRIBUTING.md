@@ -1,34 +1,31 @@
 # Contributing
 
-Thank you for contributing to `php-abuseipdb-api`. This project is in alpha, and focused, high-quality pull requests are particularly valuable.
+Thanks for contributing to `php-abuseipdb-api`.
+
+The project is currently in alpha, so small focused changes are preferred over broad refactors.
 
 ## Pull request workflow
 
-The repository currently uses a standard fork-and-PR flow based on the `master` branch.
-
-- Fork the repository.
 - Create a branch from `master`.
-- Apply focused changes with clear commits.
-- Push the branch to your fork.
-- Open a pull request against `master`.
-- Document motivation, scope, and test steps in the PR description.
+- Keep commits focused and descriptive.
+- Document what changed and how it was validated.
+- Open a PR targeting `master`.
 
-## Code style
+## Code and docs expectations
 
-PSR-12 is the target style for PHP source files. No linter is configured in the repository yet, so contributors should align manually with existing formatting and naming patterns.
+- Follow PSR-12 for PHP files.
+- Keep markdown documentation in English.
+- Keep endpoint docs aligned with actual source behavior.
+- Do not commit `env.php` or `cache/ips.json`.
 
-## Reporting bugs
+## Testing expectations
 
-Use GitHub Issues for bug reports. A good bug report should include reproducible steps, expected behavior, actual behavior, and environment context such as PHP version and runtime setup.
+There is no full PHPUnit suite yet. Validate changes with the existing project flow and include manual verification steps in your PR.
 
-## Current contribution priorities
+## Priority areas
 
-The current roadmap is open. Contributions are especially welcome in these areas:
+Contributions are especially useful in these areas:
 
-- PHPUnit automated tests.
-- Cache TTL support.
-- Unified router implementation.
-
-## Issue templates
-
-Issue templates are not available yet. They are planned for a future update.
+- Cloudflare IP trust hardening in `Security::get_ip()`.
+- Router/front-controller migration.
+- Additional automated testing.
