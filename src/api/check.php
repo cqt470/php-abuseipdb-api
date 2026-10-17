@@ -26,7 +26,7 @@
             $this->ip = $this->get_parameter("ip", "string");
             $this->token = $this->get_parameter("token", "string");
 
-            if($this->token != \API_KEY_CUSTOM && \ENVIRONMENT != "dev") $this->send_error("Unauthenticated.", 403);
+            if(\ENVIRONMENT != "dev" && !hash_equals(\API_KEY_CUSTOM, $this->token)) $this->send_error("Unauthenticated.", 403);
 
             $this->register_action("check", fn() => $this->check(), false);
 
