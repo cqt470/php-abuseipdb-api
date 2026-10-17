@@ -36,7 +36,7 @@
                 if($ip["added_at"] < (time() - \CACHE_TTL)){
                     $this->delete_entry($key, $value);
 
-                    $this->logger->log("cache", log_priority::info, "IP expired ($value).");
+                    // $this->logger->log("cache", log_priority::info, "IP expired ($value).");
                     Webhook::use_discord([
                         "title" => "TTL Reached",
                         "description" => "The IP Address `$value` has expired and has been deleted from cache.",
@@ -59,13 +59,13 @@
          * @return void
          */
         public function add_entry(array $ip): void{
-            global $logger;
-
             $data = json_decode(file_get_contents($this->filepath), true);
 
             // cache hit
             if($this->check_for_entry("ipAddress", $ip["data"]["ipAddress"])){
-                $this->logger->log("cache", log_priority::info, "IP cache hit (".$ip["data"]["ipAddress"].").");
+                // todo: capire perché non logga se il logger è usato in Cache
+                // $this->logger->log("cache", log_priority::info, "IP cache hit (".$ip["data"]["ipAddress"].").");
+                echo "ok";
                 return;
             };
             $address = $ip["data"]["ipAddress"];

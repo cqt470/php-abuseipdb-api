@@ -6,6 +6,9 @@
 
     include_once __DIR__."/index.php";
     include_once __DIR__."/../../env.php";
+    
+    use Logger;
+    $logger = new Logger(__DIR__."/../../logs");
 
     class Security{
         /**
@@ -39,11 +42,15 @@
          * @return ?array
          */
         public static function get_ip_info(?string $ip = null, bool $skip_cache = false): ?array{
+            global $logger;
             $cache = new Cache(__DIR__."/../../cache/ips.json");
 
             $caching = \ENABLE_CACHING;
             if(!$ip) $ip = Security::get_ip();
-            if($cache->check_for_entry("ipAddress", $ip) && !$skip_cache && $caching) return $cache->get_entry("ipAddress", $ip);
+            if($cache->check_for_entry("ipAddress", $ip) && !$skip_cache && $caching){
+                $logger->log("cache", log_priority::info, "IP cache hit: $ip");
+                return $cache->get_entry("ipAddress", $ip);
+            }
 
             // retrieve data
             $key = \API_KEY_ABUSEIPDB;
@@ -59,6 +66,7 @@
             $data = json_decode(file_get_contents("https://api.abuseipdb.com/api/v2/check?ipAddress=$ip&verbose&key=$key", false, $context), true);
             
             $cache->add_entry($data);
+            $logger->log("cache", log_priority::info, "IP address added to cache: $ip");
 
             return $data;
         }
