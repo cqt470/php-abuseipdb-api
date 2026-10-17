@@ -15,13 +15,13 @@
         }
 
         public function log(string $category, log_priority $priority, string $text, bool $include_ip = false){
-            if($include_ip) $ip = "Security::get_ip()";
-
             $filepath = $this->folderpath."/$category.log";
             $time = date("c");
             $_priority = strtoupper($priority->value);
-            $row = "[$_priority] $time - $text";
+            $method = $_SERVER["REQUEST_METHOD"];
+            $row = "[$_priority] $time - $method - $text";
             if($include_ip) $row .= " (IP ".Security::get_ip().")";
+
             file_put_contents($filepath, "$row\n", FILE_APPEND);
         }
     }

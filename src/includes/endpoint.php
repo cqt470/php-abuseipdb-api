@@ -103,7 +103,7 @@
          * @return string|null
          */
         protected function get_token(): ?string{
-            $bearer_token = getallheaders()["Authorization"];
+            $bearer_token = getallheaders()["Authorization"] ?? $_SERVER["HTTP_AUTHORIZATION"];
             if(!preg_match('/^Bearer\s+(\S+)\s*$/i', $bearer_token, $matches)){
                 return null;
             }
