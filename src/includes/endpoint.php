@@ -93,6 +93,15 @@
         }
 
         /**
+         * Retrieves the token, either from the header or from the parameters
+         *
+         * @return string|null
+         */
+        protected function get_token(): ?array{
+            return getallheaders();
+        }
+
+        /**
          * Handles CORS configurations
          *
          * @return void
@@ -106,7 +115,7 @@
             // CORS configs
             header("Access-Control-Allow-Origin: ".\CORS_ALLOW_ORIGIN);
             header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
-            header("Access-Control-Allow-Headers: Content-Type");
+            header("Access-Control-Allow-Headers: ".\CORS_ALLOW_HEADERS);
         }
 
         /**
