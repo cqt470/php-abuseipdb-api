@@ -218,14 +218,14 @@ All responses share the same envelope:
 | --- | --- | --- |
 | 401 | `Unauthenticated.` | No token in header or body |
 | 403 | `Unauthorized.` | Token does not match `API_KEY_CUSTOM` (non-dev) |
-| 405 | `Metodo POST necessario.` | Request method is not `POST` |
+| 405 | `POST method required.` | Request method is not `POST` |
 | 400 | `The IP doesn't seem to be valid.` | `ip` fails IP validation |
 | 400 | `Invalid timestamp string (must be ISO 8601.` | `timestamp` not parseable as ISO 8601 (report action) |
 | 400 | `Il campo <name> non è stato trovato.` | Required body field missing |
-| 400 | `<name> dovrebbe essere di tipo <type>, <actual> ricevuto.` | Body field of the wrong JSON type |
+| 400 | `"<name>" should be of datatype "<type>", "<actual>" received.` | Body field of the wrong JSON type |
 | 400 | `Specificare un'azione valida.` / `Azione non consentita.` | Missing or unregistered `action` |
 
-Error messages produced by the shared endpoint layer are currently hardcoded in Italian. They are known debt and will be migrated to English in a coordinated change; the invalid-timestamp message above is reproduced verbatim, including its unbalanced parenthesis.
+All error messages produced by the shared `Endpoint` base class are now in English.
 
 ## Caching
 
@@ -266,7 +266,6 @@ This project is intentionally minimal and still under active iteration. The foll
 - Upstream error responses may be cached for a full `CACHE_TTL` window.
 - Cache eviction currently targets the queried entry and rewrites the cache file per eviction; a rework is planned.
 - `Endpoint::get_token()` emits a PHP warning when the `Authorization` header is absent and relies on `getallheaders()`, which is not available under every SAPI.
-- Error messages are a mix of hardcoded Italian and English strings.
 - No automated PHPUnit suite is configured; current manual tests are HTML pages in `/test`.
 - Cache and log writes do not use file locking.
 
