@@ -31,7 +31,11 @@ use WeakReference;
             $data = json_decode(file_get_contents($this->filepath), true) ?? [];
             foreach($data as $ip){
                 if($ip["added_at"] < (time() - \CACHE_TTL)){
-                    // TODO: rimuovere la entry e ritornare false
+                    Webhook::use_discord([
+                        "title" => "TTL Reached",
+                        "description" => "The IP Address \"$value\" has expired and has been deleted from cache.",
+                        "color" => "#444444"
+                    ]);
                 }
                 if($ip[$key] == $value) return true;
             }
