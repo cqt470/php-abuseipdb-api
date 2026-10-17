@@ -72,6 +72,18 @@
         public static function validate_ip(string $ip): bool{
             return filter_var($ip, FILTER_VALIDATE_IP);
         }
+
+        /**
+         * Returns the SHA256 hash of a string using the SALT_SHA256 salt or the specified one, if provided
+         *
+         * @param string $input the string
+         * @param ?string $custom_salt the salt. If not provided, SALT_SHA256 will be used
+         * @return string
+         */
+        public static function sha256(string $input, ?string $custom_salt = null): string{
+            $salt = $custom_salt ?? \SALT_SHA256;
+            return hash("sha256", $input.$salt);
+        }
     }
 
     $security = new Security;
