@@ -41,7 +41,7 @@ use Endpoint;
             $this->timestamp = $parameters["timestamp"] ?? date("c");
             $this->token = $parameters["token"];
 
-            if($this->token != \API_KEY_CUSTOM) $this->send_error("Unauthenticated.", 403);
+            if($this->token != \API_KEY_CUSTOM && \ENVIRONMENT != "dev") $this->send_error("Unauthenticated.", 403);
 
             $this->register_action("report", fn() => $this->report(), false);
 
