@@ -69,7 +69,7 @@
             try{
                 $test_timestamp = new DateTime($timestamp);
             }catch(\Throwable){
-                $this->send_error("Invalid timestamp string (must be ISO 8601.");
+                $this->send_error("Invalid timestamp string (must be ISO 8601).");
             }
             
             // retrieve data
