@@ -2,6 +2,7 @@
     include_once __DIR__."/index.php";
     
     use Zexa\Includes\log_priority;
+    use Zexa\Includes\Security;
 
     class Logger{
         private string $folderpath;
@@ -13,17 +14,14 @@
             $this->folderpath = $path;
         }
 
-        /**
-         * Checks if a file exists and creates if it doesn't exist
-         *
-         * @param string $filepath
-         * @return void
-         */
-        private function check_for_file(string $filepath){
-            
-        }
+        public function log(string $category, log_priority $priority, string $text, bool $include_ip = false){
+            if($include_ip) $ip = "Security::get_ip()";
 
-        public function log(string $category, log_priority $priority, string $text){
-            $this->check_for_file($priority->value);
+            $filepath = $this->folderpath."/$category.log";
+            $time = date("c");
+            $_priority = strtoupper($priority->value);
+            $row = "[$_priority] $time - $text";
+            if($include_ip) $row .= " (IP ".Security::get_ip().")";
+            file_put_contents($filepath, "$row\n", FILE_APPEND);
         }
     }

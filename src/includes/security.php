@@ -14,7 +14,7 @@
          *
          * @return string
          */
-        public static function get_ip(): string{
+        public static function get_ip(): ?string{
             // cloudflare header
             if(!empty($_SERVER["HTTP_CF_CONNECTING_IP"])){
                 $ip = $_SERVER["HTTP_CF_CONNECTING_IP"];
