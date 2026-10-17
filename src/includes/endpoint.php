@@ -69,7 +69,7 @@
             $this->logger = new Logger(__DIR__."/../../logs/");
 
             if ($is_post_needed && ($_SERVER["REQUEST_METHOD"] ?? "GET") !== "POST") {
-                $this->send_error("Metodo POST necessario.", 405);
+                $this->send_error("POST method required.", 405);
             }
 
             $this->request_data = $this->read_request_body($is_body_needed);
@@ -138,11 +138,11 @@
             $action = $this->request_data[$action_param_name] ?? null;
 
             if (!is_string($action) || $action === "") {
-                $this->send_error("Specificare un'azione valida.", 400);
+                $this->send_error("Specify a valid action.", 400);
             }
 
             if (!isset($this->actions[$action])) {
-                $this->send_error("Azione non consentita.", 400);
+                $this->send_error("Action not permitted.", 400);
             }
 
             $configuration = $this->actions[$action];
@@ -154,7 +154,7 @@
             if ($configuration["requires_csrf"]) {
                 $token = $this->request_data["csrf_token"] ?? null;
                 if (!is_string($token) || !$this->validate_csrf($token)) {
-                    $this->send_error("Token CSRF non valido.", 400);
+                    $this->send_error("Invalid CSRF token.", 400);
                 }
             }
 
@@ -201,7 +201,7 @@
                     && ($configuration["optional"] ?? false);
 
                 if (!in_array($type, ["int", "bool", "float", "string", "array"], true)) {
-                    $this->send_error("Datatype {$type} non valido.", 400);
+                    $this->send_error("Invalid {$type} datatype.", 400);
                 }
 
                 if (!array_key_exists($name, $this->request_data)) {
@@ -216,7 +216,7 @@
                 if (!$this->matches_type($this->request_data[$name], $type)) {
                     $actual_type = gettype($this->request_data[$name]);
                     $this->send_error(
-                        "{$name} dovrebbe essere di tipo {$type}, {$actual_type} ricevuto.",
+                        "\"{$name}\" should be of datatype \"{$type}\", \"{$actual_type}\" received.",
                         400
                     );
                 }
@@ -245,7 +245,7 @@
          */
         protected function authenticate_user(bool $force_auth = true): ?array{
             if ($force_auth) {
-                $this->send_error("Non autorizzato.", 403);
+                $this->send_error("Unauthorized.", 403);
             }
 
             return null;
@@ -314,14 +314,14 @@
 
             if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
                 if ($is_body_needed) {
-                    $this->send_error("Il corpo deve essere un oggetto JSON valido.", 400);
+                    $this->send_error("The body must be a valid body.", 400);
                 }
 
                 return [];
             }
 
             if ($is_body_needed && $data === []) {
-                $this->send_error("È richiesto un corpo.", 400);
+                $this->send_error("A body is needed.", 400);
             }
 
             return $data;
@@ -363,7 +363,7 @@
             $encoded = json_encode($payload, JSON_UNESCAPED_SLASHES);
             if ($encoded === false) {
                 http_response_code(500);
-                echo '{"message":"Errore interno al server.","success":false}';
+                echo '{"message":"internal server error! :(","success":false}';
                 exit;
             }
 
