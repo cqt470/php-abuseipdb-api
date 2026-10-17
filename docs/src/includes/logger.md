@@ -1,6 +1,6 @@
 # logger.php
 
-Usage documentation for [`src/includes/logger.php`](../../src/includes/logger.php).
+Usage documentation for [`src/includes/logger.php`](../../../src/includes/logger.php).
 
 ## Purpose
 
@@ -47,7 +47,7 @@ The method has no declared return type and returns `null` in practice.
 
 ## Current usage in the codebase
 
-The single call site is `AbuseIPDBEndpoint` in [`src/api/abuseipdb.php`](../../src/api/abuseipdb.php), which logs failed token authentication attempts to `logs/auth.log` at `debug` priority with the client IP included. The endpoint instance is available to subclasses through the protected `$logger` property of `Endpoint`.
+The single call site is `AbuseIPDBEndpoint` in [`src/api/abuseipdb.php`](../../../src/api/abuseipdb.php), which logs failed token authentication attempts to `logs/auth.log` at `debug` priority with the client IP included. The endpoint instance is available to subclasses through the protected `$logger` property of `Endpoint`.
 
 ## Minimal usage example
 

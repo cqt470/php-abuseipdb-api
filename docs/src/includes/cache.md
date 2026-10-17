@@ -1,6 +1,6 @@
 # cache.php
 
-Usage documentation for [`src/includes/cache.php`](../../src/includes/cache.php).
+Usage documentation for [`src/includes/cache.php`](../../../src/includes/cache.php).
 
 ## Purpose
 
@@ -94,7 +94,7 @@ if(!$cache->check_for_entry("ipAddress", "8.8.8.8")){
 
 - [`src/includes/index.php`](./index.md)
 - [`src/includes/webhook.php`](./webhook.md)
-- [`env.php`](../../example.env.php) (`CACHE_TTL`)
+- [`example.env.php`](../../../example.env.php) (`CACHE_TTL`)
 
 ## Known limitations and TODOs
 

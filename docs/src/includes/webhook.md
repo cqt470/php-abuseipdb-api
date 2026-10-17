@@ -1,6 +1,6 @@
 # webhook.php
 
-Usage documentation for [`src/includes/webhook.php`](../../src/includes/webhook.php).
+Usage documentation for [`src/includes/webhook.php`](../../../src/includes/webhook.php).
 
 ## Purpose
 
@@ -66,7 +66,7 @@ Zexa\Includes\Webhook::use_discord([
 
 ## Internal dependencies
 
-- [`env.php`](../../example.env.php) (`ENABLE_DISCORD_WEBHOOK`, `URL_DISCORD_WEBHOOK`, `WEBHOOK_USERNAME`)
+- [`example.env.php`](../../../example.env.php) (`ENABLE_DISCORD_WEBHOOK`, `URL_DISCORD_WEBHOOK`, `WEBHOOK_USERNAME`)
 
 ## Known limitations and TODOs
 

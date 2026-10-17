@@ -1,6 +1,6 @@
 # enums.php
 
-Usage documentation for [`src/includes/enums.php`](../../src/includes/enums.php).
+Usage documentation for [`src/includes/enums.php`](../../../src/includes/enums.php).
 
 ## Purpose
 

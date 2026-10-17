@@ -1,6 +1,6 @@
 # security.php
 
-Usage documentation for [`src/includes/security.php`](../../src/includes/security.php).
+Usage documentation for [`src/includes/security.php`](../../../src/includes/security.php).
 
 ## Purpose
 
@@ -76,7 +76,7 @@ $client = Security::get_ip();
 
 - [`src/includes/index.php`](./index.md)
 - [`src/includes/cache.php`](./cache.md)
-- [`env.php`](../../example.env.php)
+- [`example.env.php`](../../../example.env.php)
 
 ## Known limitations and TODOs
 

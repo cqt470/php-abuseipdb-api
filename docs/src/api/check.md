@@ -1,6 +1,6 @@
 # Check action
 
-Usage documentation for the `check` action exposed by [`src/api/abuseipdb.php`](../../src/api/abuseipdb.php).
+Usage documentation for the `check` action exposed by [`src/api/abuseipdb.php`](../../../src/api/abuseipdb.php).
 
 ## Purpose
 
@@ -9,7 +9,7 @@ The `check` action validates an IP address, retrieves its reputation data from A
 ## HTTP endpoint
 
 - Method: `POST`
-- Path: `/api/abuseipdb.php` (file: [`src/api/abuseipdb.php`](../../src/api/abuseipdb.php), served with `src/` as document root)
+- Path: `/api/abuseipdb.php` (file: [`src/api/abuseipdb.php`](../../../src/api/abuseipdb.php), served with `src/` as document root)
 - Body: JSON object
 - CORS is handled centrally by `Endpoint::handle_cors()` using the `CORS_ALLOW_ORIGIN` and `CORS_ALLOW_HEADERS` constants. `OPTIONS` preflight requests are answered with HTTP `204` before any authentication happens.
 
@@ -89,11 +89,11 @@ All error messages produced by the shared `Endpoint` base class are now in Engli
 
 ## Internal dependencies
 
-- [`src/includes/index.php`](../../src/includes/index.php)
+- [`src/includes/index.php`](../../../src/includes/index.php)
 - [`src/includes/endpoint.php`](../includes/endpoint.md)
 - [`src/includes/security.php`](../includes/security.md)
 - [`src/includes/cache.php`](../includes/cache.md)
-- [`example.env.php`](../../example.env.php)
+- [`example.env.php`](../../../example.env.php)
 
 ## Known limitations and TODOs
 

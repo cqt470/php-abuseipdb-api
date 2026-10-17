@@ -1,6 +1,6 @@
 # Report action
 
-Usage documentation for the `report` action exposed by [`src/api/abuseipdb.php`](../../src/api/abuseipdb.php).
+Usage documentation for the `report` action exposed by [`src/api/abuseipdb.php`](../../../src/api/abuseipdb.php).
 
 ## Purpose
 
@@ -9,7 +9,7 @@ The `report` action validates the incoming payload and forwards an abuse report 
 ## HTTP endpoint
 
 - Method: `POST`
-- Path: `/api/abuseipdb.php` (file: [`src/api/abuseipdb.php`](../../src/api/abuseipdb.php), served with `src/` as document root)
+- Path: `/api/abuseipdb.php` (file: [`src/api/abuseipdb.php`](../../../src/api/abuseipdb.php), served with `src/` as document root)
 - Body: JSON object
 - CORS is handled centrally by `Endpoint::handle_cors()` using the `CORS_ALLOW_ORIGIN` and `CORS_ALLOW_HEADERS` constants. `OPTIONS` preflight requests are answered with HTTP `204` before any authentication happens.
 
@@ -86,10 +86,10 @@ All error messages produced by the shared `Endpoint` base class are now in Engli
 
 ## Internal dependencies
 
-- [`src/includes/index.php`](../../src/includes/index.php)
+- [`src/includes/index.php`](../../../src/includes/index.php)
 - [`src/includes/endpoint.php`](../includes/endpoint.md)
 - [`src/includes/security.php`](../includes/security.md)
-- [`example.env.php`](../../example.env.php)
+- [`example.env.php`](../../../example.env.php)
 
 ## Known limitations and TODOs
 

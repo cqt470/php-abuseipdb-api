@@ -229,11 +229,11 @@ All error messages produced by the shared `Endpoint` base class are now in Engli
 
 ## Caching
 
-When `ENABLE_CACHING` is `true`, results of `check` lookups are stored in `cache/ips.json` with an `added_at` timestamp and reused until they become older than `CACHE_TTL` (12 hours by default). Expired entries are evicted on lookup and trigger a Discord notification (title `TTL Reached`, gray), while new entries trigger a green `New IP added to cache` notification. Cache eviction and file rewrite behavior have known inefficiencies described in [the cache documentation](./docs/includes/cache.md).
+When `ENABLE_CACHING` is `true`, results of `check` lookups are stored in `cache/ips.json` with an `added_at` timestamp and reused until they become older than `CACHE_TTL` (12 hours by default). Expired entries are evicted on lookup and trigger a Discord notification (title `TTL Reached`, gray), while new entries trigger a green `New IP added to cache` notification. Cache eviction and file rewrite behavior have known inefficiencies described in [the cache documentation](./docs/src/includes/cache.md).
 
 ## Logging
 
-Endpoints write categorized, timestamped rows to plain-text files under `logs/`, for example `logs/auth.log`. Failed authentication attempts are currently logged at `debug` priority with the client IP included. See [the logger documentation](./docs/includes/logger.md) for the row format.
+Endpoints write categorized, timestamped rows to plain-text files under `logs/`, for example `logs/auth.log`. Failed authentication attempts are currently logged at `debug` priority with the client IP included. See [the logger documentation](./docs/src/includes/logger.md) for the row format.
 
 ## Integration examples
 
@@ -286,15 +286,15 @@ The roadmap is focused on hardening, maintainability, and production readiness.
 
 Detailed source documentation is available in:
 
-- [Check action reference](./docs/api/check.md)
-- [Report action reference](./docs/api/report.md)
-- [Endpoint base class](./docs/includes/endpoint.md)
-- [Security helpers](./docs/includes/security.md)
-- [Cache](./docs/includes/cache.md)
-- [Webhook](./docs/includes/webhook.md)
-- [Logger](./docs/includes/logger.md)
-- [Enums](./docs/includes/enums.md)
-- [Include aggregator](./docs/includes/index.md)
+- [Check action reference](./docs/src/api/check.md)
+- [Report action reference](./docs/src/api/report.md)
+- [Endpoint base class](./docs/src/includes/endpoint.md)
+- [Security helpers](./docs/src/includes/security.md)
+- [Cache](./docs/src/includes/cache.md)
+- [Webhook](./docs/src/includes/webhook.md)
+- [Logger](./docs/src/includes/logger.md)
+- [Enums](./docs/src/includes/enums.md)
+- [Include aggregator](./docs/src/includes/index.md)
 
 ## Security
 

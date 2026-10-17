@@ -1,10 +1,10 @@
 # endpoint.php
 
-Usage documentation for [`src/includes/endpoint.php`](../../src/includes/endpoint.php).
+Usage documentation for [`src/includes/endpoint.php`](../../../src/includes/endpoint.php).
 
 `Endpoint` is a standalone base class for JSON API endpoint handling. It does not require a database or global configuration. It centralizes CORS handling, JSON body parsing, parameter validation, action routing, response serialization, and logging initialization for every endpoint that extends it.
 
-> This document replaces the previous Italian-language version of `docs/includes/endpoint.md`. All markdown files in this repository are English only.
+> This document replaces the previous Italian-language version of `docs/src/includes/endpoint.md`. All markdown files in this repository are English only.
 
 ## Inclusion
 

@@ -1,6 +1,6 @@
 # index.php
 
-Usage documentation for [`src/includes/index.php`](../../src/includes/index.php).
+Usage documentation for [`src/includes/index.php`](../../../src/includes/index.php).
 
 ## Purpose
 
