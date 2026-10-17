@@ -1,3 +1,4 @@
 env.php
 cache/ips.json
 *-old*
+.aider*
