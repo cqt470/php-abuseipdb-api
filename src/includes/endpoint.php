@@ -1,5 +1,7 @@
 <?php
 
+    include_once __DIR__."/../../env.php";
+
     /**
      * Classe base per la gestione degli endpoint API JSON.
      *
@@ -91,22 +93,30 @@
         }
 
         /**
+         * Handles CORS configurations
+         *
+         * @return void
+         */
+        protected function handle_cors(): void{
+            if($_SERVER['REQUEST_METHOD'] === 'OPTIONS'){
+                http_response_code(204);
+                exit;
+            }
+
+            // CORS configs
+            header("Access-Control-Allow-Origin: ".\CORS_ALLOW_ORIGIN);
+            header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
+            header("Access-Control-Allow-Headers: Content-Type");
+        }
+
+        /**
          * Esegue l'azione identificata da un parametro della richiesta.
          *
          * @param string $action_param_name Nome del parametro contenente l'azione.
          * @return void
          */
         protected function route_action(string $action_param_name = "action"): void{
-            if($_SERVER['REQUEST_METHOD'] === 'OPTIONS'){
-                http_response_code(204);
-                exit;
-            }
-            
-            // CORS configs
-            header("Access-Control-Allow-Origin: *");
-            header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
-            header("Access-Control-Allow-Headers: Content-Type");
-
+            $this->handle_cors();
             $action = $this->request_data[$action_param_name] ?? null;
 
             if (!is_string($action) || $action === "") {
