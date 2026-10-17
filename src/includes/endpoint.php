@@ -62,6 +62,7 @@
             bool $is_body_needed = true
         ){
             $this->endpoint_name = $endpoint_name;
+            $this->handle_cors();
 
             if ($is_post_needed && ($_SERVER["REQUEST_METHOD"] ?? "GET") !== "POST") {
                 $this->send_error("Metodo POST necessario.", 405);
@@ -93,12 +94,17 @@
         }
 
         /**
-         * Retrieves the token, either from the header or from the parameters
+         * Retrieves the token, either from the "Authorization" header. Follows the RFC 6750 standard.
          *
          * @return string|null
          */
-        protected function get_token(): ?array{
-            return getallheaders();
+        protected function get_token(): ?string{
+            $bearer_token = getallheaders()["Authorization"];
+            if(!preg_match('/^Bearer\s+(\S+)\s*$/i', $bearer_token, $matches)){
+                return null;
+            }
+
+            return $matches[1];
         }
 
         /**
@@ -125,7 +131,6 @@
          * @return void
          */
         protected function route_action(string $action_param_name = "action"): void{
-            $this->handle_cors();
             $action = $this->request_data[$action_param_name] ?? null;
 
             if (!is_string($action) || $action === "") {

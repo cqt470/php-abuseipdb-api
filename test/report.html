@@ -54,17 +54,19 @@
                 response.innerHTML = "";
             }
 
+            const token = "your-key";
+
             const payload = {
                 "method": "POST",
                 "headers": {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
                 },
                 "body": JSON.stringify({
                     "action": "report",
                     "ip": val_ip,
                     "categories": [15],
-                    "comment": val_comment ?? null,
-                    "token": "your-key"
+                    "comment": val_comment ?? null
                 })
             };
 

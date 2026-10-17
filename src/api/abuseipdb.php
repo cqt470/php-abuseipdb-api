@@ -8,14 +8,13 @@
     use Zexa\Includes\Security;
 
     final class AbuseIPDBEndpoint extends Endpoint{
-        private string $token;
+        private ?string $token;
 
         public function __construct(){
             parent::__construct("status");
 
-            $this->token = $this->get_parameter("token", "string", true);
-
-            echo json_encode($this->get_token(), JSON_UNESCAPED_SLASHES);
+            $this->token = $this->get_token() ?? $this->get_parameter("token", "string", true) ?? null;
+            if(!$this->token) $this->send_error("Unauthenticated.", 401);
 
             /*
             $parameters = $this->get_parameters([
@@ -32,8 +31,8 @@
             $this->timestamp = $parameters["timestamp"] ?? date("c");
             $this->token = $parameters["token"];
 
-            if(\ENVIRONMENT != "dev" && !hash_equals(\API_KEY_CUSTOM, $this->token)) $this->send_error("Unauthenticated.", 403);
             */
+            if(\ENVIRONMENT != "dev" && !hash_equals(\API_KEY_CUSTOM, $this->token)) $this->send_error("Unauthorized.", 403);
 
             $this->register_action("check", fn() => $this->check(), false);
             $this->register_action("report", fn() => $this->report(), false);

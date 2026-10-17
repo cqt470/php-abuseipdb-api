@@ -48,16 +48,17 @@
                 response.innerHTML = "";
             }
 
+            const token = "your-key";
+
             const payload = {
                 "method": "POST",
                 "headers": {
                     "Content-Type": "application/json",
-                    "Authorization": "test"
+                    "Authorization": `Bearer ${token}`
                 },
                 "body": JSON.stringify({
-                    "action": "hello",
-                    "ip": val_ip,
-                    "token": "your-key"
+                    "action": "check",
+                    "ip": val_ip
                 })
             };
 
