@@ -18,7 +18,7 @@
             if(!$this->token) $this->send_error("Unauthenticated.", 401);
 
             if(\ENVIRONMENT != "dev" && !hash_equals(\API_KEY_CUSTOM, $this->token)){
-                $this->logger->log("auth", log_priority::debug, "ciao", true);
+                $this->logger->log("auth", log_priority::debug, "Authentication to /abuseipdb API failed via token.", true);
                 $this->send_error("Unauthorized.", 403);
             }
 
