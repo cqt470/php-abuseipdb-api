@@ -1,6 +1,6 @@
 # index.php
 
-Usage documentation for [`src/includes/index.php`](../../../src/includes/index.php).
+Usage documentation for [`src/includes/index.php`](../../src/includes/index.php).
 
 ## Purpose
 
@@ -8,23 +8,26 @@ Usage documentation for [`src/includes/index.php`](../../../src/includes/index.p
 
 ## Inclusion
 
+Endpoint and include files load the aggregator with:
+
 ```php
-include_once __DIR__ . "/../../../src/includes/index.php";
+include_once __DIR__ . "/../includes/index.php";
 ```
 
 ## Exposed behavior
 
-- Includes these files:
-  - [`src/includes/enums.php`](../../../src/includes/enums.php)
-  - [`src/includes/security.php`](../../../src/includes/security.php)
-  - [`src/includes/cache.php`](../../../src/includes/cache.php)
-  - [`src/includes/endpoint.php`](../../../src/includes/endpoint.php)
-  - [`src/includes/webhook.php`](../../../src/includes/webhook.php)
+- Includes these files, in order:
+  - [`src/includes/enums.php`](./enums.md)
+  - [`src/includes/logger.php`](./logger.md)
+  - [`src/includes/security.php`](./security.md)
+  - [`src/includes/cache.php`](./cache.md)
+  - [`src/includes/endpoint.php`](./endpoint.md)
+  - [`src/includes/webhook.php`](./webhook.md)
 
 ## Minimal usage example
 
 ```php
-include_once __DIR__ . "/../../../src/includes/index.php";
+include_once __DIR__ . "/../includes/index.php";
 ```
 
 ## Internal dependencies

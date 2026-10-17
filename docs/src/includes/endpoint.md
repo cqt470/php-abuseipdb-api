@@ -1,76 +1,33 @@
 # endpoint.php
 
-Usage documentation for [`src/includes/endpoint.php`](../../../src/includes/endpoint.php).
+Usage documentation for [`src/includes/endpoint.php`](../../src/includes/endpoint.php).
 
-`Endpoint` is a standalone base class for JSON API endpoint handling. It does not require a database, global configuration, or legacy `*-old.php` files.
+`Endpoint` is a standalone base class for JSON API endpoint handling. It does not require a database or global configuration. It centralizes CORS handling, JSON body parsing, parameter validation, action routing, response serialization, and logging initialization for every endpoint that extends it.
+
+> This document replaces the previous Italian-language version of `docs/includes/endpoint.md`. All markdown files in this repository are English only.
 
 ## Inclusion
 
-Include the class explicitly in endpoint files:
+Endpoint files include the shared aggregator, which loads `Endpoint` together with all other includes:
 
 ```php
-require_once __DIR__ . "/../../../src/includes/endpoint.php";
+include_once __DIR__ . "/../includes/index.php";
 ```
 
-## Minimal endpoint
-
-A concrete endpoint extends `Endpoint`, registers one or more actions, and starts routing. By default, these checks are enabled:
-
-- HTTP method must be `POST`.
-- JSON body must not be empty.
-- CSRF token is required for each registered action unless disabled.
-
-### Request
-
-```http
-POST /src/api/status.php
-Content-Type: application/json
-```
-
-```json
-{
-  "action": "status",
-  "csrf_token": "application-token"
-}
-```
-
-### Implementation
+Alternatively, the class can be included directly:
 
 ```php
-require_once __DIR__ . "/../../../src/includes/endpoint.php";
-
-final class StatusEndpoint extends Endpoint {
-    public function __construct(){
-        parent::__construct("status");
-
-        $this->register_action(
-            "status",
-            fn() => $this->send_success("Service available")
-        );
-
-        $this->route_action();
-    }
-}
-
-new StatusEndpoint();
+require_once __DIR__ . "/../../src/includes/endpoint.php";
 ```
 
-### Response
+## Responsibilities on construction
 
-```json
-{
-  "message": "Service available",
-  "success": true
-}
-```
+The constructor performs, in order:
 
-## Class methods
-
-Protected methods are designed for subclasses. Private methods are internal details and are not intended for child classes.
-
-### `__construct()`
-
-Initializes endpoint name, verifies HTTP method, and reads JSON body.
+1. **CORS handling** (`handle_cors()`): sends `Access-Control-Allow-Origin` from `CORS_ALLOW_ORIGIN`, `Access-Control-Allow-Methods: POST, GET, OPTIONS`, and `Access-Control-Allow-Headers` from `CORS_ALLOW_HEADERS`. An `OPTIONS` request is answered with HTTP `204` and terminates execution immediately.
+2. **Logger initialization**: creates a `Logger` instance writing to `logs/` at the repository root. The folder must exist, otherwise the constructor throws.
+3. **HTTP method check**: when `$is_post_needed` is `true` and the request method is not `POST`, responds HTTP `405` (`"Metodo POST necessario."`).
+4. **Body parsing** (`read_request_body()`): decodes the JSON body. Invalid JSON or a missing body (when required) responds HTTP `400`.
 
 ```php
 public function __construct(
@@ -80,9 +37,33 @@ public function __construct(
 )
 ```
 
-### `register_action()`
+- `$endpoint_name` identifies the endpoint and is stored in `$endpoint_name`.
+- `$is_post_needed = false` allows non-POST request methods.
+- `$is_body_needed = false` allows an empty or missing body; parsing failures then yield an empty array instead of an error.
 
-Registers a handler under an action name. You can configure whether CSRF and authentication are required.
+## Minimal endpoint
+
+A concrete endpoint extends `Endpoint`, registers one or more actions, and starts routing.
+
+```php
+final class StatusEndpoint extends Endpoint {
+    public function __construct(){
+        parent::__construct("status");
+
+        $this->register_action(
+            "status",
+            fn() => $this->send_success("Service available"),
+            false
+        );
+
+        $this->route_action();
+    }
+}
+
+new StatusEndpoint();
+```
+
+## Action registration and routing
 
 ```php
 protected function register_action(
@@ -93,17 +74,38 @@ protected function register_action(
 ): void
 ```
 
-### `route_action()`
-
-Reads the action name from the body, validates registration, executes optional authentication and CSRF checks, and invokes the handler.
-
 ```php
 protected function route_action(string $action_param_name = "action"): void
 ```
 
-### `get_parameter()`
+`route_action()` reads the action name from the body (by default the `action` field, overridable), rejects missing or unregistered names with HTTP `400`, runs the authentication and CSRF hooks when the action requires them, and finally invokes the handler.
 
-Retrieves and validates a single parameter.
+Note that `requires_csrf` defaults to `true`. Public API actions such as `check` and `report` in `src/api/abuseipdb.php` explicitly register with `requires_csrf = false`, so no CSRF token is needed for them.
+
+## Authentication token (`get_token()`)
+
+```php
+protected function get_token(): ?string
+```
+
+Reads the `Authorization` request header and extracts the credentials from a `Bearer <token>` value following RFC 6750. It returns `null` when the header value does not match the `Bearer` scheme.
+
+Known caveats, reproduced faithfully from the current implementation:
+
+- The header is read with `getallheaders()["Authorization"]` without a fallback, so an absent header emits a PHP `Undefined array key` warning and `null` is then passed to `preg_match()` (deprecated in PHP 8.1+).
+- `getallheaders()` is not available under every SAPI (for example nginx with PHP-FPM without a polyfill).
+
+Callers are expected to combine `get_token()` with a body-token fallback, as `AbuseIPDBEndpoint` does: the token is required in every environment, while its verification against `API_KEY_CUSTOM` via `hash_equals()` is skipped when `ENVIRONMENT` is `"dev"`.
+
+## CORS handling (`handle_cors()`)
+
+```php
+protected function handle_cors(): void
+```
+
+Sends the CORS headers described above and short-circuits `OPTIONS` preflight requests with HTTP `204`. The origin and allowed headers are configured exclusively through the `CORS_ALLOW_ORIGIN` and `CORS_ALLOW_HEADERS` constants in `env.php`; no endpoint file hardcodes CORS headers anymore.
+
+## Parameter retrieval and validation
 
 ```php
 protected function get_parameter(
@@ -113,41 +115,37 @@ protected function get_parameter(
 ): mixed
 ```
 
-### `get_parameters()`
-
-Retrieves and validates multiple parameters using a schema. Each value can be a type string or an array with `type` and `optional`.
-
 ```php
 protected function get_parameters(array $parameters): array
 ```
 
-### `get_request_data()`
+Supported types are `int`, `bool`, `float`, `string`, and `array`. Each schema entry can be a plain type string or an array with `type` and `optional` keys:
 
-Returns the entire decoded JSON body.
+```php
+$values = $this->get_parameters([
+    "ip" => "string",
+    "timestamp" => ["type" => "string", "optional" => true],
+]);
+```
+
+Optional missing values are returned as `null`. A missing required field, an unsupported type, or a type mismatch responds HTTP `400`. Values are never auto-cast: the JSON type must already match the expected type. `matches_type()` accepts integers where `float` is expected.
+
+The full decoded body is available through:
 
 ```php
 protected function get_request_data(): array
 ```
 
-### `authenticate_user()`
+## Responses
 
-Hook method to override with application authentication logic. The default implementation returns HTTP `403` when forced.
+Every response is serialized by `send_json()` and follows this envelope:
 
-```php
-protected function authenticate_user(bool $force_auth = true): ?array
+```json
+{
+  "message": "string or null",
+  "success": true
+}
 ```
-
-### `validate_csrf()`
-
-Hook method to override with application-specific CSRF validation.
-
-```php
-protected function validate_csrf(string $csrf_token): bool
-```
-
-### `send_success()`
-
-Sends a success JSON response and terminates execution.
 
 ```php
 protected function send_success(
@@ -156,10 +154,6 @@ protected function send_success(
 ): never
 ```
 
-### `send_error()`
-
-Sends an error JSON response and terminates execution.
-
 ```php
 protected function send_error(
     string|array|null $message,
@@ -167,153 +161,15 @@ protected function send_error(
 ): never
 ```
 
-### `add_response_parameter()`
+`success` is `true` exactly when `$http_code` is in the `2xx` range. Both methods terminate execution and have return type `never`.
 
-Adds a value to the `parameters` key in the JSON response.
+Additional data is attached through:
 
 ```php
 protected function add_response_parameter(string $key, mixed $value): void
 ```
 
-### Private methods
-
-`read_request_body()` reads and decodes JSON body. `matches_type()` validates supported types. `send_json()` builds and emits HTTP response.
-
-## Constructor details
-
-```php
-parent::__construct(
-    string $endpoint_name = "generic",
-    bool $is_post_needed = true,
-    bool $is_body_needed = true
-);
-```
-
-- `$endpoint_name` identifies the endpoint.
-- `$is_post_needed = false` allows `GET` requests.
-- `$is_body_needed = false` allows empty or missing body.
-
-Example for a `GET` endpoint without body:
-
-```php
-parent::__construct("health", false, false);
-```
-
-The body must be a JSON object. Invalid JSON, a JSON list, or an empty body when required produce HTTP `400`.
-
-## Action registration and routing
-
-```php
-$this->register_action(
-    string $action_name,
-    callable $handler,
-    bool $requires_csrf = true,
-    bool $requires_auth = false
-);
-```
-
-Routing reads `action` from request body:
-
-```php
-$this->route_action();
-```
-
-You can use a different field name:
-
-```php
-$this->route_action("operation");
-```
-
-In that case, request must contain `operation` instead of `action`. Missing or unregistered action returns HTTP `400`.
-
-### Public action without CSRF
-
-```php
-$this->register_action(
-    "health",
-    fn() => $this->send_success("OK"),
-    false
-);
-```
-
-## Parameters and validation
-
-Supported types are:
-
-- `int`
-- `bool`
-- `float`
-- `string`
-- `array`
-
-### Required single parameter
-
-```php
-$ip = $this->get_parameter("ip", "string");
-```
-
-### Optional single parameter
-
-```php
-$verbose = $this->get_parameter("verbose", "bool", true);
-```
-
-### Multiple parameters
-
-```php
-$values = $this->get_parameters([
-    "ip" => "string",
-    "verbose" => ["type" => "bool", "optional" => true],
-]);
-```
-
-Optional missing values are set to `null`. Missing required field, unsupported type, or type mismatch returns HTTP `400`.
-
-Values are not auto-cast. JSON types must already match expected types.
-
-To read full decoded body:
-
-```php
-$body = $this->get_request_data();
-```
-
-## Responses
-
-### Success response
-
-```php
-$this->send_success("IP checked");
-```
-
-You can set a custom `2xx` HTTP code:
-
-```php
-$this->send_success(["id" => 42], 201);
-```
-
-### Error response
-
-```php
-$this->send_error("Invalid ip parameter", 422);
-```
-
-Responses always follow this structure:
-
-```json
-{
-  "message": "...",
-  "success": true
-}
-```
-
-### Extra parameters
-
-```php
-$this->add_response_parameter("cached", true);
-$this->send_success("Result available");
-```
-
-Output:
+When at least one response parameter has been added, the envelope gains a `parameters` key:
 
 ```json
 {
@@ -325,53 +181,42 @@ Output:
 }
 ```
 
-`send_success()` and `send_error()` always terminate execution (`never` return type).
+If `json_encode()` fails, `send_json()` responds HTTP `500` with a hardcoded fallback body (`"internal server error! :("`).
 
-## CSRF and authentication
+## CSRF and authentication hooks
 
-The class does not include an application-specific authentication system.
-`validate_csrf()` is an overridable hook:
+The class ships no application-specific authentication. Both behaviors are overridable hooks:
 
 ```php
-protected function validate_csrf(string $token): bool
-{
-    return hash_equals($_SESSION["csrf_token"] ?? "", $token);
-}
+protected function validate_csrf(string $csrf_token): bool
 ```
 
-`authenticate_user()` is also a hook. Default behavior sends HTTP `403` when `force_auth` is `true`:
+The default implementation only checks that the token is a non-empty string. An invalid CSRF token responds HTTP `400` (`"Token CSRF non valido."`).
 
 ```php
 protected function authenticate_user(bool $force_auth = true): ?array
-{
-    $user = $this->findUserFromToken();
-
-    if ($user === null && $force_auth) {
-        $this->send_error("Unauthorized.", 403);
-    }
-
-    $this->user = $user;
-    return $user;
-}
 ```
 
-Protected action registration example:
+The default implementation responds HTTP `403` (`"Non autorizzato."`) when `$force_auth` is `true`, and returns `null` otherwise. Actions registered with `requires_auth = true` run this hook before their handler.
+
+## Logging
+
+The constructor instantiates `Logger` (writing to `logs/`) and stores it in the protected `$logger` property. Subclasses are expected to log relevant events through:
 
 ```php
-$this->register_action(
-    "private-status",
-    fn() => $this->send_success($this->user),
-    true,
-    true
-);
+$this->logger->log("auth", log_priority::debug, "Authentication to /abuseipdb API failed via token.", true);
 ```
 
-Routing executes authentication and CSRF checks before handler execution.
+See [`logger.md`](./logger.md) and [`enums.md`](./enums.md) for the logging API and the available priorities.
+
+## Internal methods
+
+`read_request_body()`, `matches_type()`, and `send_json()` are private implementation details and are not accessible to child classes.
 
 ## Complete example
 
 ```php
-require_once __DIR__ . "/../../../src/includes/endpoint.php";
+include_once __DIR__ . "/../includes/index.php";
 
 final class IpCheckEndpoint extends Endpoint {
     public function __construct(){
@@ -379,14 +224,11 @@ final class IpCheckEndpoint extends Endpoint {
 
         $this->register_action(
             "check",
-            fn() => $this->checkIp()
+            fn() => $this->checkIp(),
+            false
         );
 
         $this->route_action();
-    }
-
-    protected function validate_csrf(string $token): bool{
-        return hash_equals($_SESSION["csrf_token"] ?? "", $token);
     }
 
     private function checkIp(): never{
@@ -397,3 +239,8 @@ final class IpCheckEndpoint extends Endpoint {
 
 new IpCheckEndpoint();
 ```
+
+## Known limitations and TODOs
+
+- `get_token()` emits warnings when the `Authorization` header is missing and depends on `getallheaders()` availability (see above).
+- `validate_csrf()` default implementation does not perform timing-safe comparison.
