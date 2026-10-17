@@ -24,7 +24,7 @@
             // PHP header
             if(!empty($_SERVER["REMOTE_ADDR"])){
                 $ip = $_SERVER["REMOTE_ADDR"];
-                if(!Security::validate_ip($ip)) return $ip;
+                if(Security::validate_ip($ip)) return $ip;
             }
 
             // fallback
