@@ -58,6 +58,10 @@
             */
         }
 
+        private static function get_trusted_proxies(): array{
+            return defined("TRUSTED_PROXIES") ? \TRUSTED_PROXIES : self::DEFAULT_TRUSTED_PROXIES;
+        }
+
         /**
          * Checks wether a given IP is part of a given CIDR. Supports both IPv4 and IPv6.
          *
