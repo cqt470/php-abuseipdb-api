@@ -2,7 +2,7 @@
 
 ![PHP Version](https://img.shields.io/badge/PHP-%3E%3D8.1-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![GitHub last commit](https://img.shields.io/github/last-commit/cqt470/php-abuseipdb-api/master)
+![GitHub last commit](https://img.shields.io/github/last-commit/cqt470/php-abuseipdb-api)
 ![GitHub stars](https://img.shields.io/github/stars/cqt470/php-abuseipdb-api)
 ![Release](https://img.shields.io/badge/release-v1.0.0--alpha-orange)
 
