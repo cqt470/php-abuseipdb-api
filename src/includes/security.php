@@ -34,28 +34,21 @@
          */
         public static function get_ip(): ?string{
             $remote = $_SERVER["REMOTE_ADDR"] ?? null;
-
-            // missing or invalid IP sent to web server
-            if(!$remote || !self::validate_ip($remote)) return "127.0.0.1";
+            $cloudflare_ip = $_SERVER["HTTP_CF_CONNECTING_IP"] ?? null;
+            $general_proxy = $_SERVER["HTTP_X_FORWARDED_FOR"] ?? null;
 
             // if is not a trusted proxy IP, return it instead of reading cloudflare's/proxy's
-            return null;
-            /*
-            // cloudflare header
-            if(!empty($_SERVER["HTTP_CF_CONNECTING_IP"])){
-                $ip = $_SERVER["HTTP_CF_CONNECTING_IP"];
-                if(Security::validate_ip($ip)) return $ip;
+            if(!self::is_trusted_proxy($remote)) return $remote;
+
+            // the origin IP is trusted so the header it transports can be trusted
+            if(!empty($cloudflare_ip)) return self::validate_ip($cloudflare_ip) ? $cloudflare_ip : "127.0.0.1";
+            if(!empty($general_proxy)){
+                $first = trim(explode(",", $general_proxy)[0]);
+                return self::validate_ip($first) ? $first : "127.0.0.1";
             }
 
-            // PHP header
-            if(!empty($_SERVER["REMOTE_ADDR"])){
-                $ip = $_SERVER["REMOTE_ADDR"];
-                if(Security::validate_ip($ip)) return $ip;
-            }
-
-            // fallback
+            // if nothing works
             return "127.0.0.1";
-            */
         }
 
         /**
