@@ -58,6 +58,24 @@
             */
         }
 
+        /**
+         * Validates an IP to see if it could be valid
+         *
+         * @param string $ip
+         * @return boolean
+         */
+        public static function validate_ip(string $ip): bool{
+            return filter_var($ip, FILTER_VALIDATE_IP);
+        }
+
+        public static function is_trusted_proxy(string $ip): bool{
+            foreach(self::get_trusted_proxies() as $cidr){
+                if(self::ip_in_cidr($ip, $cidr)) return true;
+            }
+
+            return false;
+        }
+
         private static function get_trusted_proxies(): array{
             return defined("TRUSTED_PROXIES") ? \TRUSTED_PROXIES : self::DEFAULT_TRUSTED_PROXIES;
         }
@@ -131,16 +149,6 @@
             $logger->log("cache", log_priority::info, "IP address added to cache: $ip");
 
             return $data;
-        }
-
-        /**
-         * Validates an IP to see if it could be valid
-         *
-         * @param string $ip
-         * @return boolean
-         */
-        public static function validate_ip(string $ip): bool{
-            return filter_var($ip, FILTER_VALIDATE_IP);
         }
 
         /**
