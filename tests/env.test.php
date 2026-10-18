@@ -15,7 +15,7 @@
 
     define('LOGS_DIR', __DIR__ . '/tmp/logs/');
 
-    define('ABUSEIPDB_BASE_URL', 'http://127.0.0.1:8099/');
+    define('ABUSEIPDB_BASE_URL', 'http://127.0.0.1:17490');
 
     define('ENABLE_DISCORD_WEBHOOK', false);
     define('URL_DISCORD_WEBHOOK', 'http://127.0.0.1:1/disabled');
