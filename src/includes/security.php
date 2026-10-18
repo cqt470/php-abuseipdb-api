@@ -63,7 +63,7 @@
                 ]
             ]);
 
-            $data = json_decode(file_get_contents("https://api.abuseipdb.com/api/v2/check?ipAddress=$ip&verbose&key=$key", false, $context), true);
+            $data = json_decode(file_get_contents(\ABUSEIPDB_BASE_URL."/check?ipAddress=$ip&verbose", false, $context), true);
             
             $cache->add_entry($data);
             $logger->log("cache", log_priority::info, "IP address added to cache: $ip");

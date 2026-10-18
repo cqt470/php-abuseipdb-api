@@ -90,7 +90,7 @@
                 ]
             ]);
 
-            $info = json_decode(file_get_contents("https://api.abuseipdb.com/api/v2/report", false, $context), true);
+            $info = json_decode(file_get_contents(\ABUSEIPDB_BASE_URL."/report", false, $context), true);
 
             $this->add_response_parameter("info", $info);
 
