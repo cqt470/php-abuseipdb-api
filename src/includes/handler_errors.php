@@ -18,6 +18,7 @@
         error_log($message);
 
         http_response_code(500);
+        header("Content-Type: application/json");
         echo json_encode(["message" => "internal server error! :(", "success" => false]);
 
         try{
