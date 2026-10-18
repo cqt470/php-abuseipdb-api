@@ -4,3 +4,4 @@ cache/ips.json
 .aider*
 logs/*
 .phpunit.cache/
+tests/tmp/
