@@ -4,7 +4,7 @@
     include_once __DIR__."/../includes/index.php";
 
     use DateTime;
-    use Endpoint;
+    use Zexa\Includes\Endpoint;
     use Zexa\Includes\log_priority;
     use Zexa\Includes\Security;
     use Zexa\Includes\Webhook;
