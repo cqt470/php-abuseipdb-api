@@ -15,51 +15,37 @@ When in doubt about behavior, **read the code, not the docs**. The code is the s
 
 ```
 php-abuseipdb-api/
-├── .github/copilot-instructions.md     # This file
-├── .gitignore                          # Ignores env.php, cache/ips.json, *-old*, .aider*, logs/*
-├── CONTRIBUTING.md
-├── LICENSE                             # MIT + attribution to Gioele Cairo (cqt470)
+├── .github/
+│   └── copilot-instructions.md
+├── .gitignore
 ├── README.md
-├── docs/
-│   ├── includes/
-│   │   └── endpoint.md                 # Italian, in sync with code
-│   └── src/                            # LEGACY, partially stale, duplicate of docs/includes/
-│       ├── api/
-│       │   ├── check.md                # References old check.php (deleted)
-│       │   └── report.md               # References old report.php (deleted)
-│       └── includes/
-│           ├── cache.md
-│           ├── endpoint.md             # Differs from docs/includes/endpoint.md
-│           ├── enums.md
-│           ├── index.md
-│           ├── security.md
-│           └── webhook.md
-├── example.env.php                     # All env vars
+├── env.php                # Real secrets, gitignored
+├── env.php.example
+├── phpunit.xml
 ├── src/
-│   ├── api/
-│   │   └── abuseipdb.php               # Single endpoint, both check + report actions
-│   └── includes/
-│       ├── cache.php                   # Cache class with TTL enforcement + delete_entry
-│       ├── endpoint.php                # Endpoint base, bearer auth, CORS, Logger property
-│       ├── enums.php                   # log_priority enum (debug, info)
-│       ├── index.php                   # Loads all includes
-│       ├── logger.php                  # Logger class (file-based)
-│       ├── security.php                # Security class (get_ip, get_ip_info, validate_ip)
-│       └── webhook.php                 # Webhook class (Discord)
-├── test/
-│   ├── tmp/                            # Added to .gitignore
-│   ├── Unit/                           
-│   │   ├── SecurityTest.php            # covers IP resolution and CIDR matching (bug #1 regression coverage)
-│   │   └── SmokeTest.php
-│   ├── bootstrap.php
-│   └── env.test.php
+│   ├── endpoints/
+│   ├── includes/
+│   │   ├── cache.php
+│   │   ├── endpoint.php
+│   │   ├── enums.php
+│   │   ├── index.php      # Wires includes and CORS
+│   │   ├── logger.php
+│   │   ├── security.php
+│   │   └── webhook.php
+│   └── ...
 ├── tools/
 │   └── phpunit-10.phar
-├── cache/
-│   └── ips.json                        # Runtime cache (gitignored, must exist!)
-└── logs/                               # Runtime logs (gitignored)
-    ├── auth.log
-    └── ...
+└── tests/
+    ├── bootstrap.php
+    ├── env.test.php
+    ├── Unit/
+    │   ├── CacheTest.php             # Regression for Tier 0 #2
+    │   ├── EndpointTest.php          # Regression for Tier 0 #3
+    │   ├── SecurityGetIpInfoTest.php # Regression for Tier 0 #4 & #5
+    │   ├── SecurityTest.php          # Regression for Tier 0 #1
+    │   └── SmokeTest.php
+    └── fixtures/
+        └── mock-abuseipdb-router.php # Mock server for HTTP tests
 ```
 
 ## Documentation map
@@ -213,12 +199,11 @@ Closed-loop honeypot pattern is in roadmap as a future enhancement. Do not add h
 
 ### Touching `Security::get_ip()` or `Security::validate_ip()`
 
-1. Update `docs/src/includes/security.md` (Italian, or migrate to English if consolidation is in progress).
-2. Update README §Security if behavior changed.
-3. If Cloudflare header handling changed, update README §Production deployment (IP allowlist note).
-4. Verify the inverted-`!` bug is not reintroduced (Tier 0 fix #1 — see Completed decisions).
-5. If you add Cloudflare IP range validation (Tier 0 fix #3, still open), move that item from "Active" to "Completed" in this file.
-6. If you tighten the `?string` return type back to `string`, update this file and any callers.
+1. Update `docs/src/includes/security.md` in the same commit.
+2. Preserve the return type (`?string`).
+3. Do not reintroduce unconditional trust of `HTTP_CF_CONNECTING_IP`. Trust must only be granted when `REMOTE_ADDR` passes `is_trusted_proxy()`.
+4. If you modify the default trusted proxy list, update both `Security::DEFAULT_TRUSTED_PROXIES` and the "Security notes" in `README.md`.
+5. If you change `validate_ip()`, ensure it strictly returns `bool` (e.g., `filter_var(...) !== false`).
 
 ### Touching `Cache` (any method)
 
