@@ -57,7 +57,12 @@
          * @return void
          */
         public function add_entry(array $ip): void{
-            $data = json_decode(file_get_contents($this->filepath), true);
+            if(!isset($ip["data"]["ipAddress"])){
+                $this->logger->log("cache", log_priority::warning, "Refusing to cache malformed payload (likely a 4xx/5xx response).");
+                return;
+            }
+
+            $data = json_decode(file_get_contents($this->filepath), true) ?? [];
 
             // cache hit
             if($this->check_for_entry("ipAddress", $ip["data"]["ipAddress"])){
