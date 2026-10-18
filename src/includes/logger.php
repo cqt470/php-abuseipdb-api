@@ -1,8 +1,9 @@
 <?php
-    include_once __DIR__."/index.php";
-    
+    namespace Zexa\Includes;
+
     use Zexa\Includes\log_priority;
     use Zexa\Includes\Security;
+    use Exception;
 
     class Logger{
         private string $folderpath;

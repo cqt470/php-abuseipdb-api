@@ -1,10 +1,8 @@
 <?php
     namespace Zexa\Includes;
 
-    include_once __DIR__."/index.php";
-
     use Exception;
-    use Logger;
+    use Zexa\Includes\Logger;
 
     class Cache{
         private string $filepath;

@@ -1,10 +1,13 @@
 <?php
+    namespace Zexa\Includes;
 
     // guard for phpunit
     if(!defined("API_KEY_ABUSEIPDB")){
         include_once __DIR__."/../../env.php";
     }
     include_once __DIR__."/logger.php";
+
+    use Zexa\Includes\Logger;
 
     /**
      * Classe base per la gestione degli endpoint API JSON.

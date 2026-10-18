@@ -2,6 +2,7 @@
     declare(strict_types=1);
 
     use Zexa\Includes\log_priority;
+    use Zexa\Includes\Logger;
 
     set_error_handler(function (int $severity, string $message, string $file, int $line): bool{
         if(!(error_reporting() && $severity)) return false; // respects @ and error_reporting
