@@ -52,7 +52,7 @@
             self::$server_owned = is_resource(self::$server_proc);
 
             // Give the server a moment to bind the port.
-            $deadline = microtime(true) + 2.0;
+            $deadline = microtime(true) + 5.0;
             while (microtime(true) < $deadline) {
                 $probe = @fsockopen($host, $port, $errno, $errstr, 0.1);
                 if ($probe) { fclose($probe); return; }
