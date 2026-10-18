@@ -11,7 +11,7 @@
 
 When in doubt about behavior, **read the code, not the docs**. The code is the source of truth. If docs and code diverge, the code wins — fix the docs.
 
-## File structure (current)
+## File structure (NOT UPDATED)
 
 ```
 php-abuseipdb-api/
@@ -47,8 +47,14 @@ php-abuseipdb-api/
 │       ├── security.php                # Security class (get_ip, get_ip_info, validate_ip)
 │       └── webhook.php                 # Webhook class (Discord)
 ├── test/
-│   ├── check.html                      # Manual test page, updated for /api/abuseipdb.php + Bearer
-│   └── report.html
+│   ├── tmp/                            # Added to .gitignore
+│   ├── Unit/                           
+│   │   ├── SecurityTest.php            # covers IP resolution and CIDR matching (bug #1 regression coverage)
+│   │   └── SmokeTest.php
+│   ├── bootstrap.php
+│   └── env.test.php
+├── tools/
+│   └── phpunit-10.phar
 ├── cache/
 │   └── ips.json                        # Runtime cache (gitignored, must exist!)
 └── logs/                               # Runtime logs (gitignored)
@@ -118,85 +124,6 @@ CORS_ALLOW_HEADERS        // string, default "Content-Type, Authorization".
 ## Completed decisions (recent — context for Copilot)
 
 These were roadmap items that have now landed in code. Listed here so Copilot knows the current state and does not re-suggest them.
-
-### Tier 0 fix #1: `Security::get_ip()` inverted `!` — DONE
-
-Commit `c75b106`. Line 27 of `src/includes/security.php` was `if(!Security::validate_ip($ip)) return $ip;` (inverted). Now correctly reads `if(Security::validate_ip($ip)) return $ip;` for both the Cloudflare header branch (line 21) and the `REMOTE_ADDR` branch (line 27).
-
-Do not reintroduce the `!`. If touching `Security::get_ip()`, verify the validate check is in the affirmative direction.
-
-**Caveat**: the signature is now `?string` but the implementation always returns a string (it falls back to `"127.0.0.1"`). The nullable signature is misleading and should be tightened to `string`. Track as a minor cleanup.
-
-### Tier 0 fix #2: `hash_equals()` for token comparison — DONE
-
-Commit `d96f7b4`. `abuseipdb.php` line 20 now uses:
-
-```php
-if(\ENVIRONMENT != "dev" && !hash_equals(\API_KEY_CUSTOM, $this->token)){
-    $this->logger->log("auth", log_priority::debug, "Authentication to /abuseipdb API failed via token.", true);
-    $this->send_error("Unauthorized.", 403);
-}
-```
-
-Two things to note:
-
-1. The comparison is now timing-safe via `hash_equals(\API_KEY_CUSTOM, $this->token)` — argument order matters: secret first, user input second. Do not invert.
-2. **Auth is fully skipped when `ENVIRONMENT === "dev"`**. This is intentional for local development but a footgun in production. Flag in any PR that touches auth if `ENVIRONMENT` is not enforced to `"production"` in prod deployment paths.
-
-### Tier 0 fix #3: `HTTP_CF_CONNECTING_IP` spoofing — STILL OPEN
-
-Currently `Security::get_ip()` trusts `HTTP_CF_CONNECTING_IP` unconditionally if present. Should verify that `REMOTE_ADDR` is in Cloudflare's IP ranges (https://www.cloudflare.com/ips/) before trusting the header. Status: **not started**. This is the only remaining Tier 0 item.
-
-When implementing, also update §"Completed decisions" above by removing this item from Active and adding it to Completed.
-
-### Cache TTL enforcement — DONE
-
-Commit `07276d9`. `CACHE_TTL` (defined in `env.php`, default 43200s = 12h) is now enforced:
-
-- `Cache::check_for_entry()` detects entries whose `added_at` is older than `time() - CACHE_TTL`.
-- On expired entry, calls `Cache::delete_entry()` to remove it, sends a Discord webhook (color `#444444`, title "TTL Reached"), and returns `false`.
-- New method `Cache::delete_entry(string $key, string $value): void` — rewrites `cache/ips.json` without the matching entry.
-
-**Known caveats** (do not fix without explicit request, but be aware):
-
-1. `check_for_entry()` calls `delete_entry()` inside its own loop, which re-reads and rewrites the JSON file. Inefficient but functionally correct. Multiple file reads per request.
-2. The "TTL Reached" webhook payload does not include a `timestamp` field (other webhooks do). Minor inconsistency.
-3. `Cache::__construct()` now **throws an `Exception` if `cache/ips.json` does not exist** (changed from previous behavior that created the file). The installation step `touch cache/ips.json` is mandatory. Document this in README.
-
-### Bearer token auth migration — DONE
-
-Commits `c019018`, `2d3baaa`. `Endpoint::get_token()` in `src/includes/endpoint.php` reads `Authorization: Bearer <token>` HTTP header via regex `/^Bearer\s+(\S+)\s*$/i`.
-
-`AbuseIPDBEndpoint::__construct()` calls `$this->get_token() ?? $this->get_parameter("token", "string", true) ?? null` — Bearer header wins, body `token` is legacy fallback. When the header is missing and the body has no `token`, returns `401 Unauthenticated.`. When the token does not match, returns `403 Unauthorized.` and logs an `auth` event at `debug` priority via `$this->logger->log()`.
-
-**Caveat**: `get_token()` does not defensively handle `getallheaders()` returning `false` on some PHP-FPM setups. The access to `["Authorization"]` may produce a PHP 8+ deprecation warning. A defensive rewrite is planned:
-
-```php
-protected function get_token(): ?string {
-    $headers = getallheaders();
-    if ($headers === false) return null;
-    $bearer_token = $headers["Authorization"] ?? "";
-    if (!preg_match('/^Bearer\s+(\S+)\s*$/i', $bearer_token, $matches)) return null;
-    return $matches[1];
-}
-```
-
-### Single endpoint unification — DONE
-
-Commits `ab480c3`, `2d3baaa`. `src/api/check.php` and `src/api/report.php` were merged into `src/api/abuseipdb.php`. Class `AbuseIPDBEndpoint` (final, extends `Endpoint`) handles both `check` and `report` actions via `register_action()` + `route_action()`. Old files deleted.
-
-The path public URL is now `/api/abuseipdb.php` (still directly accessible). When the router front controller lands, this will become `/api/abuseipdb` via rewrite.
-
-### CORS centralisation — DONE
-
-Commits `b0c5ce6`, `46c67ce`. `Endpoint::handle_cors()` is called from `Endpoint::__construct()` BEFORE the POST method check. This ordering is critical — `OPTIONS` preflight requests must receive CORS headers, and the POST check would otherwise reject `OPTIONS` with HTTP `405`.
-
-Headers set:
-- `Access-Control-Allow-Origin: <CORS_ALLOW_ORIGIN>`
-- `Access-Control-Allow-Methods: POST, GET, OPTIONS`
-- `Access-Control-Allow-Headers: <CORS_ALLOW_HEADERS>`
-
-`OPTIONS` requests get `204 No Content` + `exit` after headers are sent.
 
 ### Logger implementation — DONE (partial)
 
@@ -369,7 +296,6 @@ Closed-loop honeypot pattern is in roadmap as a future enhancement. Do not add h
 
 If a request is ambiguous on any of these, ask before acting:
 
-- Whether to fix the remaining Tier 0 bug (`HTTP_CF_CONNECTING_IP` spoofing, still open) as part of an unrelated change (default: no, flag it separately).
 - Whether a change to `env.php` constants should also update `example.env.php`.
 - Whether to translate Italian error messages in code (default: no, wait for coordinated migration).
 - Whether to translate the existing `docs/includes/endpoint.md` or `docs/src/**/*.md` from Italian to English as part of an unrelated change (default: yes if you're already touching that file, no if you're not — but flag the debt).
