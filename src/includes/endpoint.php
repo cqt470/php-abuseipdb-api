@@ -109,10 +109,15 @@
          * @return string|null
          */
         protected function get_token(): ?string{
-            $bearer_token = getallheaders()["Authorization"] ?? $_SERVER["HTTP_AUTHORIZATION"];
-            if(!preg_match('/^Bearer\s+(\S+)\s*$/i', $bearer_token, $matches)){
-                return null;
-            }
+            // guard for phpunit test
+            if(!class_exists($this->logger::class)) $this->logger = new Logger(\LOGS_DIR);
+
+            // does not exist in nginx or cli environments
+            $headers = function_exists("getallheaders") ? getallheaders() : [];
+
+            $bearer_token = $headers["Authorization"] ?? $_SERVER["HTTP_AUTHORIZATION"] ?? null;
+            if(!$bearer_token || $bearer_token == "") return null;
+            if(!preg_match('/^Bearer\s+(\S+)\s*$/i', $bearer_token, $matches)) return null;
 
             return $matches[1];
         }
