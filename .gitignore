@@ -3,3 +3,4 @@ cache/ips.json
 *-old*
 .aider*
 logs/*
+.phpunit.cache/
