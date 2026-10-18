@@ -8,9 +8,6 @@
     if(!defined("API_KEY_ABUSEIPDB")){
         include_once __DIR__."/../../env.php";
     }
-    
-    use Zexa\Includes\Logger;
-    $logger = new Logger(\LOGS_DIR);
 
     class Security{
         /**
@@ -25,6 +22,12 @@
             "2400:cb00::/32", "2405:b500::/32", "2405:8100::/32", "2a06:98c0::/29", "2c0f:f248::/32",
             "2606:4700::/32", "2803:f800::/32"
         ];
+        
+        private static ?Logger $logger = null;
+
+        private static function logger(): Logger{
+            return self::$logger ??= new Logger(\LOGS_DIR);
+        }
 
         /**
          * Gets the real IP of the user safely.
@@ -122,13 +125,12 @@
          * @return ?array
          */
         public static function get_ip_info(?string $ip = null, bool $skip_cache = false): ?array{
-            global $logger;
             $cache = new Cache(\CACHE_FILE);
 
             $caching = \ENABLE_CACHING;
             if(!$ip) $ip = Security::get_ip();
             if($cache->check_for_entry("ipAddress", $ip) && !$skip_cache && $caching){
-                $logger->log("cache", log_priority::info, "IP cache hit: $ip");
+                self::logger()->log("cache", log_priority::info, "IP cache hit: $ip");
                 return $cache->get_entry("ipAddress", $ip);
             }
 
@@ -146,7 +148,7 @@
             $data = json_decode(file_get_contents(\ABUSEIPDB_BASE_URL."/check?ipAddress=$ip&verbose", false, $context), true);
             
             $cache->add_entry($data);
-            $logger->log("cache", log_priority::info, "IP address added to cache: $ip");
+            self::logger()->log("cache", log_priority::info, "IP address added to cache: $ip");
 
             return $data;
         }
