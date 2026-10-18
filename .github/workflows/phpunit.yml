@@ -1,0 +1,25 @@
+name: PHPUnit Tests
+
+on:
+  push:
+    branches: [ "master", "test/**" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Downloads the code
+    - uses: actions/checkout@v4
+
+    # 2. Installs PHP
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.4'
+
+    # 3. Executes the tests using the local PHAR file
+    - name: Run PHPUnit
+      run: php tools/phpunit-10.phar --testsuite unit
