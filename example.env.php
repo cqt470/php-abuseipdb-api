@@ -15,3 +15,4 @@
     define("CORS_ALLOW_ORIGIN", "*"); // remember to configure it depending on your needs, * is highly insecure but is best in development on local environments
     define("CORS_ALLOW_HEADERS", "Content-Type, Authorization"); // Authorization header is needed for compatibility with systems who expect Bearer token based auth
     define("SALT_SHA256", "YOUR_KEY_HERE"); // key used in things such as hashes
+    define("TRUSTED_PROXIES", []);

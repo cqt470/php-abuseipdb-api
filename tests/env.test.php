@@ -23,3 +23,5 @@
 
     define('CORS_ALLOW_ORIGIN', '*');
     define('CORS_ALLOW_HEADERS', 'Content-Type, Authorization');
+    
+    define("TRUSTED_PROXIES", []);

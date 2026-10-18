@@ -75,7 +75,9 @@
         }
 
         private static function get_trusted_proxies(): array{
-            return defined("TRUSTED_PROXIES") ? \TRUSTED_PROXIES : self::DEFAULT_TRUSTED_PROXIES;
+            if(!defined("TRUSTED_PROXIES")) return self::DEFAULT_TRUSTED_PROXIES;
+            if(empty(\TRUSTED_PROXIES)) return self::DEFAULT_TRUSTED_PROXIES;
+            return \TRUSTED_PROXIES;
         }
 
         /**
