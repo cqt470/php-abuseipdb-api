@@ -259,13 +259,10 @@ $response = file_get_contents("http://localhost:8000/api/abuseipdb.php", false, 
 
 ## Known limitations
 
-This project is intentionally minimal and still under active iteration. The following limitations are known and documented.
+This project is intentionally minimal and still under active iteration. The following limitations are known and documented:
 
 - No server-side rate limiting.
 - No automatic retry if AbuseIPDB is unavailable.
-- Upstream error responses may be cached for a full `CACHE_TTL` window.
-- Cache eviction currently targets the queried entry and rewrites the cache file per eviction; a rework is planned.
-- `Endpoint::get_token()` emits a PHP warning when the `Authorization` header is absent and relies on `getallheaders()`, which is not available under every SAPI.
 - Cache and log writes do not use file locking.
 
 ## Roadmap

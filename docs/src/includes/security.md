@@ -41,18 +41,15 @@ Trusted proxy ranges default to the official Cloudflare list (`Security::DEFAULT
 
 ### `get_ip_info()`
 
-```php
-public static function get_ip_info(?string $ip = null, bool $skip_cache = false): ?array
-```
+Fetches the AbuseIPDB check data for an IP, with caching and HTTP status validation.
 
-Retrieves reputation data for an IP from the AbuseIPDB API v2 `check` endpoint.
-
-- When `$ip` is `null`, the client IP is resolved with `get_ip()`.
-- When `ENABLE_CACHING` is `true` and `$skip_cache` is `false`, a fresh cache hit is returned directly.
-- On cache miss, a GET request is sent to `https://api.abuseipdb.com/api/v2/check` with the official key in both the `Key` request header and the `key` query parameter, a 16-second timeout, and `ignore_errors` enabled so 4xx/5xx bodies are still readable.
-- The decoded response is stored in the cache through `Cache::add_entry()` before being returned.
-
-Known caveats: upstream error responses are cached like successful ones, and the API key is included in the request URL, which may leak into server or proxy logs. Both are documented as limitations pending rework.
+- Signature: `get_ip_info(?string $ip = null, bool $skip_cache = false): ?array`
+- If `$ip` is `null`, it is resolved via `get_ip()`.
+- If caching is enabled and the entry exists (and `$skip_cache` is `false`), it returns the cached array immediately.
+- On a cache miss, it sends a GET request to `https://api.abuseipdb.com/api/v2/check` with a 16-second timeout.
+- The API key is sent securely via the `Key` HTTP header (never as a query parameter).
+- The response is parsed. If the HTTP status is **2xx**, the payload is passed to `Cache::add_entry()` and returned. 
+- If the status is **4xx or 5xx**, the method logs the error and returns `null`. Upstream errors are never cached.
 
 ### `validate_ip()`
 

@@ -84,18 +84,13 @@ Note that `requires_csrf` defaults to `true`. Public API actions such as `check`
 
 ## Authentication token (`get_token()`)
 
-```php
-protected function get_token(): ?string
-```
+Safely extracts the Bearer token from the request headers.
 
-Reads the `Authorization` request header and extracts the credentials from a `Bearer <token>` value following RFC 6750. It returns `null` when the header value does not match the `Bearer` scheme.
-
-Known caveats, reproduced faithfully from the current implementation:
-
-- The header is read with `getallheaders()["Authorization"]` without a fallback, so an absent header emits a PHP `Undefined array key` warning and `null` is then passed to `preg_match()` (deprecated in PHP 8.1+).
-- `getallheaders()` is not available under every SAPI (for example nginx with PHP-FPM without a polyfill).
-
-Callers are expected to combine `get_token()` with a body-token fallback, as `AbuseIPDBEndpoint` does: the token is required in every environment, while its verification against `API_KEY_CUSTOM` via `hash_equals()` is skipped when `ENVIRONMENT` is `"dev"`.
+- Signature: `get_token(): ?string`
+- **Header extraction**: Checks `getallheaders()` if the function exists. If not (e.g., on CLI or some FPM setups), it safely falls back to `$_SERVER['HTTP_AUTHORIZATION']`.
+- **Validation**: Parses the header against the RFC 6750 standard (`Bearer <token>`). 
+- **Safety**: If the header is missing, empty, or does not match the Bearer scheme, it returns `null` without emitting PHP warnings or deprecation notices.
+- Callers are expected to combine this with a body-token fallback if required by the application logic.
 
 ## CORS handling (`handle_cors()`)
 
