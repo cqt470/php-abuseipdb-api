@@ -266,21 +266,20 @@ This project is intentionally minimal and still under active iteration. The foll
 - Upstream error responses may be cached for a full `CACHE_TTL` window.
 - Cache eviction currently targets the queried entry and rewrites the cache file per eviction; a rework is planned.
 - `Endpoint::get_token()` emits a PHP warning when the `Authorization` header is absent and relies on `getallheaders()`, which is not available under every SAPI.
-- No automated PHPUnit suite is configured; current manual tests are HTML pages in `/test`.
 - Cache and log writes do not use file locking.
 
 ## Roadmap
 
 The roadmap is focused on hardening, maintainability, and production readiness.
 
-- Verify that the request truly originates from Cloudflare before trusting `HTTP_CF_CONNECTING_IP`.
-- Implement a dedicated front controller with a route table.
-- Move `env.php` outside the webroot with a configurable path.
-- Replace the hardcoded body-token comparison caveats with full Bearer-only auth once backward compatibility is dropped.
-- Add automated tests with PHPUnit.
-- Add issue templates.
-- Add SQL database support in a future version.
-- Add a closed-loop honeypot as a future enhancement.
+- [x] Verify that the request truly originates from Cloudflare before trusting `HTTP_CF_CONNECTING_IP`.
+- [ ] Implement a dedicated front controller with a route table.
+- [ ] Move `env.php` outside the webroot with a configurable path.
+- [x] Replace the hardcoded body-token comparison caveats with full Bearer-only auth once backward compatibility is dropped.
+- [x] Add automated tests with PHPUnit.
+- [ ] Add issue templates.
+- [ ] Add SQL database support in a future version.
+- [ ] Add a closed-loop honeypot as a future enhancement.
 
 ## Documentation
 
@@ -306,7 +305,7 @@ The current security model is intentionally simple and should be treated as WIP.
 - `env.php` must never be committed.
 - In production, secrets managers or environment-injected secrets are recommended.
 - Endpoint auth compares the provided token against `API_KEY_CUSTOM` with a timing-safe `hash_equals()`; the comparison is skipped in `dev` environments.
-- The `HTTP_CF_CONNECTING_IP` header is trusted without verifying that the request comes from Cloudflare; this is the next planned security fix.
+- Proxy headers (`HTTP_CF_CONNECTING_IP`, `HTTP_X_FORWARDED_FOR`) are only trusted when `REMOTE_ADDR` belongs to a trusted proxy. The default list is the official Cloudflare ranges; override it by defining `TRUSTED_PROXIES` in `env.php`.
 - A reverse proxy and IP allowlist are strongly recommended in production.
 - IP addresses are personal data under GDPR Article 4(1).
 - IPs are persisted in `cache/ips.json` and can appear in Discord webhook payloads.
