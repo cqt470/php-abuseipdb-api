@@ -1,6 +1,9 @@
 <?php
 
-    include_once __DIR__."/../../env.php";
+    // guard for phpunit
+    if(!defined("API_KEY_ABUSEIPDB")){
+        include_once __DIR__."/../../env.php";
+    }
     include_once __DIR__."/logger.php";
 
     /**
