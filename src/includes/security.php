@@ -33,6 +33,14 @@
          * @return string
          */
         public static function get_ip(): ?string{
+            $remote = $_SERVER["REMOTE_ADDR"] ?? null;
+
+            // missing or invalid IP sent to web server
+            if(!$remote || !self::validate_ip($remote)) return "127.0.0.1";
+
+            // if is not a trusted proxy IP, return it instead of reading cloudflare's/proxy's
+            return null;
+            /*
             // cloudflare header
             if(!empty($_SERVER["HTTP_CF_CONNECTING_IP"])){
                 $ip = $_SERVER["HTTP_CF_CONNECTING_IP"];
@@ -47,6 +55,41 @@
 
             // fallback
             return "127.0.0.1";
+            */
+        }
+
+        /**
+         * Checks wether a given IP is part of a given CIDR. Supports both IPv4 and IPv6.
+         *
+         * @param string $ip Origin IP
+         * @param string $cidr The CIDR
+         * @return boolean
+         */
+        public static function ip_in_cidr(string $ip, string $cidr): bool{
+            if(str_contains($cidr, '/')){
+                [$subnet, $mask] = explode('/', $cidr, 2);
+            } else {
+                $subnet = $cidr;
+                $mask = str_contains($ip, ':') ? 128 : 32;
+            }
+            $mask = (int) $mask;
+
+            $ip_bin     = @inet_pton($ip);
+            $subnet_bin = @inet_pton($subnet);
+            if($ip_bin === false || $subnet_bin === false || strlen($ip_bin) !== strlen($subnet_bin)){
+                return false;
+            }
+
+            $bytes = intdiv($mask, 8);
+            $bits  = $mask % 8;
+
+            if($bytes > 0 && substr($ip_bin, 0, $bytes) !== substr($subnet_bin, 0, $bytes)){
+                return false;
+            }
+            if($bits === 0) return true;
+
+            $mask_byte = chr((0xFF << (8 - $bits)) & 0xFF);
+            return ($ip_bin[$bytes] & $mask_byte) === ($subnet_bin[$bytes] & $mask_byte);
         }
 
         /**
