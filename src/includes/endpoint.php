@@ -110,7 +110,7 @@
          */
         protected function get_token(): ?string{
             // guard for phpunit test
-            if(!class_exists($this->logger::class)) $this->logger = new Logger(\LOGS_DIR);
+            if(!class_exists("Logger")) $this->logger = new Logger(\LOGS_DIR);
 
             // does not exist in nginx or cli environments
             $headers = function_exists("getallheaders") ? getallheaders() : [];
