@@ -8,7 +8,7 @@
     include_once __DIR__."/../../env.php";
     
     use Logger;
-    $logger = new Logger(__DIR__."/../../logs");
+    $logger = new Logger(\LOGS_DIR);
 
     class Security{
         /**
@@ -43,7 +43,7 @@
          */
         public static function get_ip_info(?string $ip = null, bool $skip_cache = false): ?array{
             global $logger;
-            $cache = new Cache(__DIR__."/../../cache/ips.json");
+            $cache = new Cache(\CACHE_FILE);
 
             $caching = \ENABLE_CACHING;
             if(!$ip) $ip = Security::get_ip();

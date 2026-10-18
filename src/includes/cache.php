@@ -13,11 +13,11 @@
         /**
          * Manages the cache
          *
-         * @param string $filepath the filephat of the cache to handle
+         * @param string $filepath the filepath of the cache to handle
          */
         public function __construct(string $filepath){
             if(!file_exists($filepath)) throw new Exception("File doesn't exist.");
-            $this->logger = new Logger(__DIR__."/../../logs");
+            $this->logger = new Logger(\LOGS_DIR);
 
             $this->filepath = $filepath;
         }

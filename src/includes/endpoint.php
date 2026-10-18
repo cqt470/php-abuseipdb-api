@@ -66,7 +66,7 @@
         ){
             $this->endpoint_name = $endpoint_name;
             $this->handle_cors();
-            $this->logger = new Logger(__DIR__."/../../logs/");
+            $this->logger = new Logger(\LOGS_DIR);
 
             if ($is_post_needed && ($_SERVER["REQUEST_METHOD"] ?? "GET") !== "POST") {
                 $this->send_error("POST method required.", 405);

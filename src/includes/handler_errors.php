@@ -20,7 +20,7 @@
         echo json_encode(["message" => "internal server error! :(", "success" => false]);
 
         try{
-            $logger = new Logger(__DIR__."/../../logs/");
+            $logger = new Logger(\LOGS_DIR);
             $logger->log("errors", log_priority::critical, "Uncaught Exception. $message");
         }catch(\Throwable $e){
             return;
