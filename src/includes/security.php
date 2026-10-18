@@ -146,11 +146,18 @@
             ]);
 
             $data = json_decode(file_get_contents(\ABUSEIPDB_BASE_URL."/check?ipAddress=$ip&verbose", false, $context), true);
-            
-            $cache->add_entry($data);
-            self::logger()->log("cache", log_priority::info, "IP address added to cache: $ip");
 
-            return $data;
+            $http_code = 0;
+            if(isset($http_response_header) && preg_match("{HTTP\/\S*\s(\d{3})}", $http_response_header[0], $matches)) $http_code = (int)$matches[1];
+            switch($http_code){
+                case "200":
+                    $cache->add_entry($data);
+                    self::logger()->log("cache", log_priority::info, "IP address added to cache: $ip");
+                    return $data;
+                default:
+                    self::logger()->log("cache", log_priority::warning, "Got a \"$http_code\" HTTP code from the API");
+                    return null;
+            }
         }
 
         /**
