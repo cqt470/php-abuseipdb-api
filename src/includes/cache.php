@@ -32,7 +32,8 @@
             $data = json_decode(file_get_contents($this->filepath), true) ?? [];
             foreach($data as $ip){
                 if($ip["added_at"] < (time() - \CACHE_TTL)){
-                    $this->delete_entry($key, $value);
+                    // evict the stale entry itself, not the one being searched for
+                    $this->delete_entry($key, $ip[$key]);
 
                     // $this->logger->log("cache", log_priority::info, "IP expired ($value).");
                     Webhook::use_discord([
@@ -41,7 +42,7 @@
                         "color" => "#444444"
                     ]);
 
-                    return false;
+                    continue; // keep scanning, the searched value may come later
                 }
 
                 if($ip[$key] == $value) return true;
