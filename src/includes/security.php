@@ -37,18 +37,23 @@
             $cloudflare_ip = $_SERVER["HTTP_CF_CONNECTING_IP"] ?? null;
             $general_proxy = $_SERVER["HTTP_X_FORWARDED_FOR"] ?? null;
 
+            // no usable IP at all
+            if(empty($remote) || !self::validate_ip($remote)){
+                return "127.0.0.1";
+            }
+
             // if is not a trusted proxy IP, return it instead of reading cloudflare's/proxy's
             if(!self::is_trusted_proxy($remote)) return $remote;
 
             // the origin IP is trusted so the header it transports can be trusted
-            if(!empty($cloudflare_ip)) return self::validate_ip($cloudflare_ip) ? $cloudflare_ip : "127.0.0.1";
+            if(!empty($cloudflare_ip) && self::validate_ip($cloudflare_ip)) return $cloudflare_ip;
             if(!empty($general_proxy)){
                 $first = trim(explode(",", $general_proxy)[0]);
-                return self::validate_ip($first) ? $first : "127.0.0.1";
+                if(self::validate_ip($first)) return $first;
             }
 
-            // if nothing works
-            return "127.0.0.1";
+            // trusted proxy but no usable client IP in headers
+            return $remote;
         }
 
         /**
