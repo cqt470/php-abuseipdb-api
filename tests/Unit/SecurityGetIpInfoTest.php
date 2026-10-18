@@ -6,18 +6,6 @@
     use PHPUnit\Framework\TestCase;
     use Zexa\Includes\Security;
 
-    /**
-     * Bug #4: Security::get_ip_info() caches 4xx/5xx responses from AbuseIPDB.
-     *
-     * Bug #5 (already fixed in code) — regression guard: the API key must
-     * never appear in the request URL (it already travels in the Key: header).
-     *
-     * These tests require \ABUSEIPDB_BASE_URL to point to a live HTTP server.
-     * The PHP built-in server is started/stopped automatically from setUpBeforeClass.
-     *
-     * Recommended tests/env.test.php:
-     *     define('ABUSEIPDB_BASE_URL', 'http://127.0.0.1:17490');
-     */
     final class SecurityGetIpInfoTest extends TestCase
     {
         private const IP_429 = '203.0.113.4';
@@ -27,22 +15,26 @@
 
         /** @var resource|null */
         private static $server_proc = null;
-
         private static bool $server_owned = false;
 
         public static function setUpBeforeClass(): void
         {
+            if (!function_exists('proc_open')) {
+                self::markTestSkipped('proc_open is disabled, cannot start mock server.');
+            }
+
             $parsed = parse_url(\ABUSEIPDB_BASE_URL);
             if (!$parsed || empty($parsed['host']) || empty($parsed['scheme'])) {
-                return; // setUp() will skip each test with a clear message
+                return;
             }
 
             $host = $parsed['host'];
             $port = $parsed['port'] ?? (($parsed['scheme'] === 'https') ? 443 : 80);
 
             // If a server is already listening, don't try to start another one.
-            $probe = @fsockopen($host, $port, $errno, $errstr, 0.2);
-            if ($probe) { fclose($probe); return; }
+            if (self::probe_server($host, $port)) {
+                return;
+            }
 
             $router = __DIR__ . '/fixtures/mock-abuseipdb-router.php';
             $cmd = sprintf('php -S %s:%d %s', $host, $port, escapeshellarg($router));
@@ -51,12 +43,13 @@
             self::$server_proc = proc_open($cmd, $descriptors, $pipes);
             self::$server_owned = is_resource(self::$server_proc);
 
-            // Give the server a moment to bind the port.
+            // Give the server up to 5 seconds to bind the port (CI runners can be slow).
             $deadline = microtime(true) + 5.0;
             while (microtime(true) < $deadline) {
-                $probe = @fsockopen($host, $port, $errno, $errstr, 0.1);
-                if ($probe) { fclose($probe); return; }
-                usleep(50_000);
+                if (self::probe_server($host, $port)) {
+                    return;
+                }
+                usleep(100_000); // 100ms
             }
         }
 
@@ -80,7 +73,6 @@
                 );
             }
 
-            // Cache::__construct() throws if the file does not exist.
             $dir = dirname(\CACHE_FILE);
             if (!is_dir($dir)) mkdir($dir, 0775, true);
             file_put_contents(\CACHE_FILE, '[]');
@@ -88,10 +80,6 @@
             $log = __DIR__ . '/fixtures/last_request.log';
             if (file_exists($log)) unlink($log);
         }
-
-        // ------------------------------------------------------------------
-        // Bug #4 — do not cache non-2xx responses
-        // ------------------------------------------------------------------
 
         /**
          * @dataProvider non_2xx_provider
@@ -125,10 +113,6 @@
             );
         }
 
-        // ------------------------------------------------------------------
-        // Bug #5 — regression: API key must not be in the URL
-        // ------------------------------------------------------------------
-
         public function test_api_key_not_in_request_url(): void
         {
             Security::get_ip_info(self::IP_OK, true);
@@ -153,6 +137,24 @@
         // ------------------------------------------------------------------
         // Helpers
         // ------------------------------------------------------------------
+
+        private static function probe_server(string $host, int $port): bool
+        {
+            $probe = false;
+            // Temporarily suppress warnings so PHPUnit's error handler doesn't throw on connection refused.
+            $previous = set_error_handler(static fn() => true);
+            try {
+                $probe = fsockopen($host, $port, $errno, $errstr, 0.1);
+            } finally {
+                restore_error_handler();
+            }
+
+            if ($probe) {
+                fclose($probe);
+                return true;
+            }
+            return false;
+        }
 
         private function readCache(): array
         {
