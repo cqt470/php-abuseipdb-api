@@ -123,7 +123,7 @@ await fetch("http://localhost:8000/api/abuseipdb.php", {
   },
   body: JSON.stringify({
     action: "check",
-    ip: "8.8.8.8"
+    ip: "127.0.0.1"
   })
 });
 ```
@@ -137,7 +137,34 @@ Example response:
   "parameters": {
     "info": {
       "data": {
-        "ipAddress": "8.8.8.8"
+        "ipAddress": "127.0.0.1",
+        "isPublic": false,
+        "ipVersion": 4,
+        "isWhitelisted": false,
+        "abuseConfidenceScore": 0,
+        "countryCode": null,
+        "usageType": "Reserved",
+        "isp": null,
+        "domain": null,
+        "hostnames": [],
+        "isTor": false,
+        "countryName": null,
+        "totalReports": 1071,
+        "numDistinctUsers": 188,
+        "lastReportedAt": "2026-10-10T01:23:45+67:89",
+        "reports": [
+          {
+            "reportedAt": "2026-10-10T01:23:45+67:89",
+            "comment": "A comment",
+            "categories": [
+              4
+            ],
+            "reporterId": 1234567,
+            "reporterCountryCode": "CH",
+            "reporterCountryName": "Switzerland"
+          },
+          // and so on...
+        ]
       }
     }
   }
