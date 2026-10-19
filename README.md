@@ -171,7 +171,7 @@ Example response:
 }
 ```
 
-The `parameters.info` value is the raw decoded response of the AbuseIPDB API v2 `check` endpoint, wrapped in its own `data` object. Exact fields depend on the upstream API and typically include the abuse confidence score and report metadata.
+The `parameters.info` value is the raw decoded response of the AbuseIPDB API v2 `check` endpoint, wrapped in its own `data` object. Exact fields depend on the upstream API and typically include the abuse confidence score and report metadata. [See AbuseIPDB API v2 reference](https://docs.abuseipdb.com/#check-endpoint)
 
 ### Report action
 
