@@ -44,7 +44,7 @@ Please share your runtime context.
 
 - PHP version:
 - Execution environment (local server, Docker, VM, production host, other):
-- Endpoint involved (`check.php`, `report.php`, or include file):
+- Endpoint involved (`/api/abuseipdb.php` with `check` or `report` action, or an include file):
 - Relevant configuration flags (`ENABLE_CACHING`, `ENABLE_DISCORD_WEBHOOK`):
 
 ## Logs and evidence
