@@ -1,6 +1,6 @@
 # Security helpers
 
-[`src/includes/security.php`](../../src/includes/security.php) contains static
+[`src/includes/security.php`](../../../src/includes/security.php) contains static
 helpers for client IP resolution, IP validation, and AbuseIPDB lookups.
 
 ## Public methods

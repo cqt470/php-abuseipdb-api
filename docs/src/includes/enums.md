@@ -1,6 +1,6 @@
 # Shared enums
 
-[`src/includes/enums.php`](../../src/includes/enums.php) defines the backed
+[`src/includes/enums.php`](../../../src/includes/enums.php) defines the backed
 string enum `Zexa\Includes\log_priority`.
 
 | Case | Value |

@@ -1,6 +1,6 @@
 # Include aggregator
 
-[`src/includes/index.php`](../../src/includes/index.php) loads the shared
+[`src/includes/index.php`](../../../src/includes/index.php) loads the shared
 include files in this order:
 
 1. `handler_errors.php`

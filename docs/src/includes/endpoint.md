@@ -1,6 +1,6 @@
 # Endpoint base class
 
-[`src/includes/endpoint.php`](../../src/includes/endpoint.php) provides the
+[`src/includes/endpoint.php`](../../../src/includes/endpoint.php) provides the
 shared request, routing, validation, CORS, and JSON response behavior.
 
 ## Constructor

@@ -2,14 +2,14 @@
 
 ![PHP Version](https://img.shields.io/badge/PHP-%3E%3D8.1-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Release](https://img.shields.io/badge/release-v1.0.0--alpha-orange)
+![Release](https://img.shields.io/badge/release-v1.0.0--stable-green)
 
 A self-hosted, zero-dependency PHP proxy for the AbuseIPDB API. The proxy
 keeps the official AbuseIPDB key server-side and exposes one authenticated
 endpoint for IP checks and reports.
 
-> This project is alpha software. The source of truth for behavior is the
-> code in [`src/`](./src/); documentation is maintained to match it.
+> This document describes the 1.0.0 stable release. The source of truth for
+> behavior is the code in [`src/`](./src/).
 
 ## Requirements
 
@@ -117,7 +117,7 @@ validation, 401 for a missing token, 403 for a rejected token, and 405 for a
 non-POST request.
 
 The complete request and error reference is
-[`docs/api/abuseipdb.md`](./docs/api/abuseipdb.md).
+[`docs/src/api/abuseipdb.md`](./docs/src/api/abuseipdb.md).
 
 ## Runtime behavior
 
@@ -145,15 +145,15 @@ trusted proxy list. Invalid or missing `REMOTE_ADDR` falls back to
 
 ## Documentation
 
-- [API reference](./docs/api/abuseipdb.md)
+- [API reference](./docs/src/api/abuseipdb.md)
 - [Deployment guide](./docs/DEPLOYMENT.md)
-- [Cache](./docs/includes/cache.md)
-- [Endpoint base class](./docs/includes/endpoint.md)
-- [Enums](./docs/includes/enums.md)
-- [Include aggregator](./docs/includes/index.md)
-- [Logger](./docs/includes/logger.md)
-- [Security helpers](./docs/includes/security.md)
-- [Discord webhook](./docs/includes/webhook.md)
+- [Cache](./docs/src/includes/cache.md)
+- [Endpoint base class](./docs/src/includes/endpoint.md)
+- [Enums](./docs/src/includes/enums.md)
+- [Include aggregator](./docs/src/includes/index.md)
+- [Logger](./docs/src/includes/logger.md)
+- [Security helpers](./docs/src/includes/security.md)
+- [Discord webhook](./docs/src/includes/webhook.md)
 
 ## Limitations
 

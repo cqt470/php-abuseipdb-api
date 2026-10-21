@@ -1,6 +1,6 @@
 # Logger
 
-[`src/includes/logger.php`](../../src/includes/logger.php) writes categorized
+[`src/includes/logger.php`](../../../src/includes/logger.php) writes categorized
 plain-text rows to a validated directory.
 
 ## API
@@ -30,4 +30,4 @@ When `$include_ip` is true, the row also contains the IP returned by
 created on first write and are not rotated by the application.
 
 The concurrency regression coverage is in
-[`tests/Unit/LoggerConcurrencyTest.php`](../../tests/Unit/LoggerConcurrencyTest.php).
+[`tests/Unit/LoggerConcurrencyTest.php`](../../../tests/Unit/LoggerConcurrencyTest.php).

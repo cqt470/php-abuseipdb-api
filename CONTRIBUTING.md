@@ -1,6 +1,7 @@
 # Contributing
 
-Thank you for contributing to `php-abuseipdb-api`. This project is in alpha, and focused, high-quality pull requests are particularly valuable.
+Thank you for contributing to `php-abuseipdb-api` 1.0.0 stable. Focused,
+high-quality pull requests are particularly valuable.
 
 ## Pull request workflow
 
@@ -26,9 +27,10 @@ Use GitHub Issues for bug reports. A good bug report should include reproducible
 The current roadmap is open. Contributions are especially welcome in these areas:
 
 - PHPUnit automated tests.
-- Cache TTL support.
-- Unified router implementation.
+- Cache and concurrency improvements.
+- Production hardening that preserves the stable API.
 
 ## Issue templates
 
-Issue templates are not available yet. They are planned for a future update.
+Issue templates are available under
+[`.github/ISSUE_TEMPLATE.md`](./.github/ISSUE_TEMPLATE.md).

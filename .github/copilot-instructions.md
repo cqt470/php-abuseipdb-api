@@ -6,7 +6,7 @@
 
 ## Project facts
 
-- Self-hosted PHP proxy for AbuseIPDB; alpha status.
+- Self-hosted PHP proxy for AbuseIPDB; 1.0.0 stable release.
 - PHP 8.1+; no Composer dependencies, framework, database, Redis, cURL, or
   Guzzle.
 - Namespaces are `Zexa\Includes` and `Zexa\Endpoints`.
@@ -22,14 +22,14 @@
 ```text
 src/api/abuseipdb.php
 src/includes/{cache,endpoint,enums,index,logger,security,webhook}.php
-docs/api/abuseipdb.md
-docs/includes/{cache,endpoint,enums,index,logger,security,webhook}.md
+docs/src/api/abuseipdb.md
+docs/src/includes/{cache,endpoint,enums,index,logger,security,webhook}.md
 tests/Unit/
 ```
 
-Do not reintroduce `docs/src/api/check.md`, `docs/src/api/report.md`, or the
-old `docs/src/includes/` documentation tree. The canonical documentation
-directories are `docs/api/` and `docs/includes/`.
+Do not reintroduce `docs/src/api/check.md` or `docs/src/api/report.md`. The
+canonical documentation directories are `docs/src/api/` and
+`docs/src/includes/`.
 
 ## Code conventions
 
@@ -85,7 +85,7 @@ and the relevant documentation page. Never edit or commit local `env.php`.
 ## Documentation workflow
 
 When PHP behavior changes, update the corresponding English page in
-`docs/includes/` or `docs/api/`, then update [`README.md`](../README.md).
+`docs/src/includes/` or `docs/src/api/`, then update [`README.md`](../README.md).
 Keep links relative to the document that contains them and verify every link.
 Do not create duplicate documentation trees or leave references to deleted
 endpoint files.

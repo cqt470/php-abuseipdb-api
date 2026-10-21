@@ -1,6 +1,6 @@
 # Cache
 
-[`src/includes/cache.php`](../../src/includes/cache.php) implements a JSON
+[`src/includes/cache.php`](../../../src/includes/cache.php) implements a JSON
 file cache. The constructor requires the target file to exist and throws an
 `Exception` otherwise.
 

@@ -1,6 +1,6 @@
 # AbuseIPDB endpoint
 
-The API is exposed by [`src/api/abuseipdb.php`](../../src/api/abuseipdb.php).
+The API is exposed by [`src/api/abuseipdb.php`](../../../src/api/abuseipdb.php).
 It is one `POST` endpoint selected by the `action` field:
 
 ```text

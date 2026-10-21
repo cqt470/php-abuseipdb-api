@@ -1,6 +1,6 @@
 # Discord webhook
 
-[`src/includes/webhook.php`](../../src/includes/webhook.php) sends one Discord
+[`src/includes/webhook.php`](../../../src/includes/webhook.php) sends one Discord
 embed using the configured webhook URL.
 
 ```php
