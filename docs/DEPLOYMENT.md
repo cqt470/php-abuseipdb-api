@@ -1,23 +1,24 @@
 # Deployment guide
 
 This guide describes a production deployment of the 1.0.0 stable release on
-Linux with Apache and PHP-FPM. The application itself is independent of the
-web server, but the examples below use Apache.
+Debian 13 (Trixie), with Apache and PHP-FPM behind a Cloudflare Tunnel.
+Cloudflare terminates public TLS and `cloudflared` forwards traffic to Apache
+over loopback. The server does not need a public HTTP or HTTPS listener.
 
 ## Requirements
 
-- Linux with Apache 2.4 and PHP-FPM.
-- PHP 8.1 or newer.
-- The PHP `openssl` support required for HTTPS stream requests.
-- Outbound HTTPS access to `api.abuseipdb.com`.
+- Debian 13 (Trixie).
+- A Cloudflare zone and a hostname managed by that zone.
+- A Cloudflare account permitted to create and run a Tunnel.
+- PHP 8.1 or newer, Apache 2.4, and PHP-FPM.
+- Outbound HTTPS access to Cloudflare and `api.abuseipdb.com`.
 - A valid AbuseIPDB API key.
 
 The project has no Composer dependencies and does not use cURL.
 
 ## Install Debian 13 packages
 
-Debian 13 (Trixie) provides PHP 8.4 in its standard repositories. Run the
-following commands on a fresh container:
+Run this on a fresh container:
 
 ```bash
 # Refresh the package index.
@@ -28,7 +29,6 @@ sudo apt update
 # php8.4-fpm: executes PHP requests received from Apache.
 # php8.4-mbstring and php8.4-xml: extensions required by PHPUnit.
 # phpunit: installs Debian's PHPUnit command as an additional test runner.
-# certbot and python3-certbot-apache: obtain and configure Apache TLS certificates.
 # git: downloads the application source.
 # curl and ca-certificates: support smoke tests and trusted HTTPS requests.
 sudo apt install -y \
@@ -38,14 +38,33 @@ sudo apt install -y \
     php8.4-mbstring \
     php8.4-xml \
     phpunit \
-    certbot \
-    python3-certbot-apache \
     git \
     curl \
     ca-certificates
 
 # Enable Apache and PHP-FPM at boot and start them immediately.
 sudo systemctl enable --now apache2 php8.4-fpm
+```
+
+Install `cloudflared` from Cloudflare's package repository:
+
+```bash
+# Add Cloudflare's signing key directory.
+sudo install -m 0755 -d /usr/share/keyrings
+
+# Download the repository signing key and store it in the keyring.
+curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg \
+    | sudo tee /usr/share/keyrings/cloudflare-main.gpg > /dev/null
+
+# Register Cloudflare's Debian repository for cloudflared.
+echo "deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main" \
+    | sudo tee /etc/apt/sources.list.d/cloudflared.list > /dev/null
+
+# Refresh package metadata after adding the repository.
+sudo apt update
+
+# Install the Cloudflare Tunnel client.
+sudo apt install -y cloudflared
 ```
 
 The repository includes `tools/phpunit-10.phar`, which is the pinned test
@@ -55,9 +74,8 @@ the extensions required by the pinned PHAR.
 
 ## Filesystem layout
 
-Keep the repository root outside the public document root. The endpoint files
-are under `src/api/`, while the endpoint includes the shared PHP files from
-`src/includes/`.
+Keep the repository root outside the public document root. Apache serves only
+`src/api/` locally; Cloudflare is the only public entry point.
 
 ```text
 /var/www/php-abuseipdb/
@@ -73,12 +91,10 @@ are under `src/api/`, while the endpoint includes the shared PHP files from
 └── tools/
 ```
 
-The Apache `DocumentRoot` should be `src/api/`. This prevents direct access
-to `env.php`, cache data, logs, tests, and include files. The application
-currently loads `env.php` from the repository root; do not move it without
-also changing the include paths in the PHP source.
+The application currently loads `env.php` from the repository root. Do not
+move it without also changing the include paths in the PHP source.
 
-## Installation
+## Install the application
 
 ```bash
 # Create the parent directory for the application.
@@ -113,33 +129,21 @@ sudo chmod 0640 cache/ips.json
 sudo chmod 0640 env.php
 ```
 
-Replace every placeholder in `env.php`. In particular, set
-`API_KEY_ABUSEIPDB`, `API_KEY_CUSTOM`, `SALT_SHA256`, and
-`URL_DISCORD_WEBHOOK` if webhooks are enabled. Set `ENVIRONMENT` to a value
-other than `dev` before production use.
-
-The cache and log directories must be writable by the PHP-FPM user. The
-configuration file must be readable by PHP-FPM but must not be writable by it.
+Replace every placeholder in `env.php`. Set `ENVIRONMENT` to a value other
+than `dev` before production use.
 
 ## Apache and PHP-FPM
 
-Create a virtual host similar to the following, replacing the hostname and
-PHP-FPM socket for the server:
+Apache listens only on `127.0.0.1:8080`. This prevents direct Internet access;
+`cloudflared` is the only process that should connect to this listener.
+
+Create `/etc/apache2/sites-available/php-abuseipdb.conf`:
 
 ```apache
-<VirtualHost *:80>
-    ServerName abuseipdb-proxy.example.com
-    Redirect permanent / https://abuseipdb-proxy.example.com/
-</VirtualHost>
+Listen 127.0.0.1:8080
 
-<VirtualHost *:443>
-    ServerName abuseipdb-proxy.example.com
-
-    SSLEngine on
-    SSLCertificateFile /etc/letsencrypt/live/abuseipdb-proxy.example.com/fullchain.pem
-    SSLCertificateKeyFile /etc/letsencrypt/live/abuseipdb-proxy.example.com/privkey.pem
-    SSLProtocol -all +TLSv1.2 +TLSv1.3
-    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+<VirtualHost 127.0.0.1:8080>
+    ServerName localhost
 
     DocumentRoot /var/www/php-abuseipdb/src/api
 
@@ -147,11 +151,14 @@ PHP-FPM socket for the server:
         Options -Indexes
         AllowOverride None
         Require all granted
+
+        # Send PHP files to the local PHP-FPM 8.4 socket.
         <FilesMatch "\.php$">
             SetHandler "proxy:unix:/run/php/php8.4-fpm.sock|fcgi://localhost"
         </FilesMatch>
     </Directory>
 
+    # Deny accidental access to files outside the document root.
     <Directory /var/www/php-abuseipdb>
         Require all denied
     </Directory>
@@ -161,14 +168,17 @@ PHP-FPM socket for the server:
 </VirtualHost>
 ```
 
-Enable the required modules and site:
+Enable the modules and site:
 
 ```bash
-# Enable Apache modules for PHP-FPM proxying, response headers, and TLS.
-sudo a2enmod proxy proxy_fcgi headers ssl
+# Enable Apache modules for PHP-FPM proxying and response headers.
+sudo a2enmod proxy proxy_fcgi headers
 
 # Enable the virtual host created above.
 sudo a2ensite php-abuseipdb
+
+# Disable the default site so it cannot expose another listener or document root.
+sudo a2dissite 000-default
 
 # Validate Apache configuration before reloading it.
 sudo apache2ctl configtest
@@ -177,11 +187,65 @@ sudo apache2ctl configtest
 sudo systemctl reload apache2
 ```
 
-The endpoint URL is:
+Verify the local origin before configuring Cloudflare:
 
-```text
-https://abuseipdb-proxy.example.com/abuseipdb.php
+```bash
+# Check that Apache answers locally through PHP-FPM.
+curl -i http://127.0.0.1:8080/abuseipdb.php
 ```
+
+A `405` response is expected because the endpoint requires `POST`; a PHP
+error or connection failure means Apache/PHP-FPM is not configured correctly.
+
+## Configure the Cloudflare Tunnel
+
+Authenticate `cloudflared` with an account that can manage the target zone:
+
+```bash
+# Open the Cloudflare authorization flow in a browser.
+cloudflared tunnel login
+
+# Create a named tunnel and note the generated tunnel UUID.
+cloudflared tunnel create php-abuseipdb
+```
+
+Create `/etc/cloudflared/config.yml`:
+
+```yaml
+tunnel: REPLACE_WITH_TUNNEL_UUID
+credentials-file: /root/.cloudflared/REPLACE_WITH_TUNNEL_UUID.json
+
+ingress:
+  # Forward the public hostname to Apache over loopback.
+  - hostname: abuseipdb.example.com
+    service: http://127.0.0.1:8080
+
+  # Reject every hostname not explicitly listed above.
+  - service: http_status:404
+```
+
+Replace the UUID, credentials path, and hostname. Protect the credentials
+file; it grants access to the Tunnel.
+
+Create the DNS route and install the Tunnel as a system service:
+
+```bash
+# Create the proxied DNS record for the public hostname.
+cloudflared tunnel route dns php-abuseipdb abuseipdb.example.com
+
+# Install cloudflared as a systemd service using /etc/cloudflared/config.yml.
+sudo cloudflared service install
+
+# Enable the Tunnel at boot and start it now.
+sudo systemctl enable --now cloudflared
+
+# Confirm that the Tunnel service is running.
+sudo systemctl status cloudflared --no-pager
+```
+
+Public HTTPS is terminated by Cloudflare and forwarded through the encrypted
+Tunnel. No Certbot package, local certificate, Apache port 443 listener, or
+public inbound port 80 is required.
 
 ## Production configuration
 
@@ -189,40 +253,23 @@ Use the constants from [`example.env.php`](../example.env.php). Do not use
 different names such as `ABUSEIPDB_API_KEY` or `PROXY_TOKEN`; those constants
 are not read by this project.
 
-Recommended production settings:
+For a Cloudflare Tunnel, PHP sees `REMOTE_ADDR` as the local `cloudflared`
+process. Set the trusted proxy list accordingly:
 
 ```php
 define("ENVIRONMENT", "production");
-define("CORS_ALLOW_ORIGIN", "https://app.example.com");
+define("CORS_ALLOW_ORIGIN", "https://abuseipdb.example.com");
 define("CORS_ALLOW_HEADERS", "Content-Type, Authorization");
-define("TRUSTED_PROXIES", ["203.0.113.10/32"]);
+define("TRUSTED_PROXIES", ["127.0.0.1/32", "::1/128"]);
 ```
 
-`CORS_ALLOW_ORIGIN` is emitted as one literal response header by the current
-code. Configure one exact origin; comma-separated origin lists and wildcard
-patterns are not interpreted as allow-lists. The default `*` is suitable only
-for development.
+This trusts forwarded client-IP headers only from the local Tunnel connector.
+Do not add broad private ranges unless every host in those ranges is a
+trusted proxy.
 
-Configure `TRUSTED_PROXIES` only with the actual reverse-proxy or CDN ranges.
-The application trusts `HTTP_CF_CONNECTING_IP` and
-`HTTP_X_FORWARDED_FOR` only when `REMOTE_ADDR` belongs to that list (or the
-built-in Cloudflare ranges when the constant is not defined).
-
-## HTTPS and permissions
-
-HTTPS is required because requests carry the custom token and the server
-communicates with AbuseIPDB using the official API key. Obtain and renew a
-certificate with the distribution's supported ACME tooling, for example:
-
-```bash
-# Request a TLS certificate and configure Apache HTTPS support.
-sudo certbot --apache -d abuseipdb-proxy.example.com
-```
-
-Do not expose the repository root, `env.php`, `cache/`, or `logs/` through
-Apache aliases or symlinks. IP addresses can occur in cache entries, logs, and
-Discord payloads, so protect these files according to the applicable privacy
-requirements.
+`CORS_ALLOW_ORIGIN` is emitted as one literal response header. Configure one
+exact origin; comma-separated origin lists and wildcard patterns are not
+interpreted as allow-lists.
 
 ## Logging and rotation
 
@@ -244,12 +291,11 @@ Configure host-level rotation, for example:
 
 ## Smoke test
 
-The endpoint requires `POST`, JSON, an action, and a token. The following
-checks use the real interface and avoid printing secrets:
+The endpoint requires `POST`, JSON, an action, and a token:
 
 ```bash
-# Store the public endpoint URL used by the smoke tests.
-HOST="https://abuseipdb-proxy.example.com/abuseipdb.php"
+# Store the public Cloudflare hostname used by the smoke tests.
+HOST="https://abuseipdb.example.com/abuseipdb.php"
 
 # Missing token: the API should return HTTP 401.
 curl -sS -o /dev/null -w "%{http_code}\n" \
@@ -266,20 +312,23 @@ curl -sS -i -X POST \
   -d '{"action":"check","ip":"8.8.8.8"}' "$HOST"
 ```
 
-The valid request should return a JSON response with the project's
-`message`, `success`, and optional `parameters` envelope. A real upstream
-check consumes the configured AbuseIPDB quota unless the IP is already in
-the cache.
+The valid request should return the project's `message`, `success`, and
+optional `parameters` envelope. Verify that `/env.php`, `/cache/ips.json`, and
+`/logs/api.log` are not publicly accessible through the Cloudflare hostname.
 
-Also verify that requesting `/env.php`, `/cache/ips.json`, and
-`/logs/api.log` does not expose files. With `src/api/` as the document root,
-these paths should normally return 404.
+Check the Tunnel and Apache logs if the public request fails:
+
+```bash
+# Show recent Tunnel service messages.
+sudo journalctl -u cloudflared -n 50 --no-pager
+
+# Show recent Apache errors.
+sudo journalctl -u apache2 -n 50 --no-pager
+```
 
 ## Upgrades and rollback
 
-Keep `env.php`, `cache/`, and `logs/` outside Git-tracked changes. For an
-upgrade, fetch the new stable tag, inspect the release notes, and reload
-Apache after updating the working tree:
+Keep `env.php`, `cache/`, and `logs/` outside Git-tracked changes:
 
 ```bash
 # Enter the deployed repository.
@@ -294,12 +343,11 @@ sudo git checkout v1.0.1-stable
 # Validate Apache configuration before applying the upgrade.
 sudo apache2ctl configtest
 
-# Reload Apache so it serves the upgraded source.
+# Reload Apache; cloudflared continues using the same local service.
 sudo systemctl reload apache2
 ```
 
-Rollback to the previous verified tag and reload Apache if the smoke test
-fails:
+Rollback to the last verified stable tag and reload Apache:
 
 ```bash
 # Select the last verified stable release.
@@ -312,6 +360,8 @@ sudo systemctl reload apache2
 
 ## Out of scope
 
+- Certbot or locally managed TLS certificates
+- Public Apache ports 80 and 443
 - nginx-specific configuration
 - Windows/IIS and shared hosting
 - application-level rate limiting

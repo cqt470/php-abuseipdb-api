@@ -22,7 +22,8 @@ endpoint for IP checks and reports.
 ## Installation
 
 On a fresh Debian 13 (Trixie) container, install the web server, PHP-FPM,
-the PHP extensions used by the application and PHPUnit:
+the PHP extensions used by the application, PHPUnit, and the tools used by
+the Cloudflare Tunnel deployment:
 
 ```bash
 # Refresh the package index.
@@ -33,7 +34,7 @@ sudo apt update
 # php8.4-fpm: executes PHP requests through Apache.
 # php8.4-mbstring and php8.4-xml: required by PHPUnit and its dependencies.
 # phpunit: installs Debian's PHPUnit command as an additional test runner.
-# certbot and python3-certbot-apache: obtain and configure Apache TLS certificates.
+# curl and ca-certificates: support smoke tests and trusted HTTPS requests.
 sudo apt install -y \
   apache2 \
   php8.4-cli \
@@ -41,14 +42,32 @@ sudo apt install -y \
   php8.4-mbstring \
   php8.4-xml \
   phpunit \
-  certbot \
-  python3-certbot-apache \
   git \
   curl \
   ca-certificates
 
 # Enable and start PHP-FPM and Apache immediately and on future boots.
 sudo systemctl enable --now php8.4-fpm apache2
+```
+
+For the production deployment behind Cloudflare Tunnel, install
+`cloudflared` from Cloudflare's repository:
+
+```bash
+# Add Cloudflare's signing key directory.
+sudo install -m 0755 -d /usr/share/keyrings
+
+# Download and register Cloudflare's package signing key.
+curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg \
+  | sudo tee /usr/share/keyrings/cloudflare-main.gpg > /dev/null
+
+# Register the Debian repository that contains cloudflared.
+echo "deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main" \
+  | sudo tee /etc/apt/sources.list.d/cloudflared.list > /dev/null
+
+# Refresh package metadata and install the Tunnel client.
+sudo apt update
+sudo apt install -y cloudflared
 ```
 
 The repository also includes a pinned PHPUnit 10 PHAR under `tools/`, so the
@@ -90,8 +109,8 @@ php -S localhost:8000 -t src/
 
 The endpoint is then available at
 `http://localhost:8000/api/abuseipdb.php`. See
-[`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md) for production layout and
-permissions.
+[`docs/DEPLOYMENT.md`](./docs/DEPLOYMENT.md) for the production layout behind
+a Cloudflare Tunnel. TLS is terminated by Cloudflare; Certbot is not used.
 
 ## Configuration
 
