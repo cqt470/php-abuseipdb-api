@@ -14,6 +14,45 @@ web server, but the examples below use Apache.
 
 The project has no Composer dependencies and does not use cURL.
 
+## Install Debian 13 packages
+
+Debian 13 (Trixie) provides PHP 8.4 in its standard repositories. Run the
+following commands on a fresh container:
+
+```bash
+# Refresh the package index.
+sudo apt update
+
+# Install Apache and the PHP-FPM runtime.
+# php8.4-cli: provides the php command and runs the PHPUnit PHAR.
+# php8.4-fpm: executes PHP requests received from Apache.
+# php8.4-mbstring and php8.4-xml: extensions required by PHPUnit.
+# phpunit: installs Debian's PHPUnit command as an additional test runner.
+# certbot and python3-certbot-apache: obtain and configure Apache TLS certificates.
+# git: downloads the application source.
+# curl and ca-certificates: support smoke tests and trusted HTTPS requests.
+sudo apt install -y \
+    apache2 \
+    php8.4-cli \
+    php8.4-fpm \
+    php8.4-mbstring \
+    php8.4-xml \
+    phpunit \
+    certbot \
+    python3-certbot-apache \
+    git \
+    curl \
+    ca-certificates
+
+# Enable Apache and PHP-FPM at boot and start them immediately.
+sudo systemctl enable --now apache2 php8.4-fpm
+```
+
+The repository includes `tools/phpunit-10.phar`, which is the pinned test
+runner used by this project. The `phpunit` Debian package is also installed
+for a system-level PHPUnit command; `php8.4-mbstring` and `php8.4-xml` provide
+the extensions required by the pinned PHAR.
+
 ## Filesystem layout
 
 Keep the repository root outside the public document root. The endpoint files
@@ -42,20 +81,35 @@ also changing the include paths in the PHP source.
 ## Installation
 
 ```bash
+# Create the parent directory for the application.
 sudo mkdir -p /var/www
+
+# Move into the web server's application area.
 cd /var/www
+
+# Download the repository without exposing its root as a document root.
 sudo git clone https://github.com/cqt470/php-abuseipdb-api.git php-abuseipdb
 cd /var/www/php-abuseipdb
+
+# Select the stable release tag.
 sudo git checkout v1.0.0-stable
 
+# Copy the configuration template; edit the resulting file before use.
 sudo cp example.env.php env.php
+
+# Create runtime storage and initialize the JSON cache.
 sudo mkdir -p cache logs
 printf '[]' | sudo tee cache/ips.json > /dev/null
 
+# Give the deployment group ownership of the application tree.
 sudo chown -R root:www-data /var/www/php-abuseipdb
+
+# Allow PHP-FPM to write cache and log data.
 sudo chown www-data:www-data cache logs cache/ips.json
 sudo chmod 0750 cache logs
 sudo chmod 0640 cache/ips.json
+
+# Make the configuration readable by PHP-FPM but not writable by it.
 sudo chmod 0640 env.php
 ```
 
@@ -110,9 +164,16 @@ PHP-FPM socket for the server:
 Enable the required modules and site:
 
 ```bash
+# Enable Apache modules for PHP-FPM proxying, response headers, and TLS.
 sudo a2enmod proxy proxy_fcgi headers ssl
+
+# Enable the virtual host created above.
 sudo a2ensite php-abuseipdb
+
+# Validate Apache configuration before reloading it.
 sudo apache2ctl configtest
+
+# Apply the new virtual-host configuration without stopping Apache.
 sudo systemctl reload apache2
 ```
 
@@ -154,6 +215,7 @@ communicates with AbuseIPDB using the official API key. Obtain and renew a
 certificate with the distribution's supported ACME tooling, for example:
 
 ```bash
+# Request a TLS certificate and configure Apache HTTPS support.
 sudo certbot --apache -d abuseipdb-proxy.example.com
 ```
 
@@ -186,15 +248,18 @@ The endpoint requires `POST`, JSON, an action, and a token. The following
 checks use the real interface and avoid printing secrets:
 
 ```bash
+# Store the public endpoint URL used by the smoke tests.
 HOST="https://abuseipdb-proxy.example.com/abuseipdb.php"
 
-# Missing token: expected HTTP 401.
+# Missing token: the API should return HTTP 401.
 curl -sS -o /dev/null -w "%{http_code}\n" \
   -X POST -H "Content-Type: application/json" \
   -d '{"action":"check","ip":"8.8.8.8"}' "$HOST"
 
-# Valid request. Replace the placeholder with the configured custom token.
+# Use the value configured as API_KEY_CUSTOM in env.php.
 TOKEN="REPLACE_WITH_API_KEY_CUSTOM"
+
+# Send an authenticated check request and print its JSON response.
 curl -sS -i -X POST \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
@@ -217,10 +282,19 @@ upgrade, fetch the new stable tag, inspect the release notes, and reload
 Apache after updating the working tree:
 
 ```bash
+# Enter the deployed repository.
 cd /var/www/php-abuseipdb
+
+# Download the latest tag list from the remote repository.
 sudo git fetch --tags
+
+# Select the new stable release.
 sudo git checkout v1.0.1-stable
+
+# Validate Apache configuration before applying the upgrade.
 sudo apache2ctl configtest
+
+# Reload Apache so it serves the upgraded source.
 sudo systemctl reload apache2
 ```
 
@@ -228,7 +302,10 @@ Rollback to the previous verified tag and reload Apache if the smoke test
 fails:
 
 ```bash
+# Select the last verified stable release.
 sudo git checkout v1.0.0-stable
+
+# Validate and apply the rollback configuration.
 sudo apache2ctl configtest
 sudo systemctl reload apache2
 ```

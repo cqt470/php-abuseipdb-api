@@ -21,10 +21,59 @@ endpoint for IP checks and reports.
 
 ## Installation
 
+On a fresh Debian 13 (Trixie) container, install the web server, PHP-FPM,
+the PHP extensions used by the application and PHPUnit:
+
 ```bash
+# Refresh the package index.
+sudo apt update
+
+# Apache and PHP-FPM runtime.
+# php8.4-cli: runs PHP commands and the PHPUnit PHAR.
+# php8.4-fpm: executes PHP requests through Apache.
+# php8.4-mbstring and php8.4-xml: required by PHPUnit and its dependencies.
+# phpunit: installs Debian's PHPUnit command as an additional test runner.
+# certbot and python3-certbot-apache: obtain and configure Apache TLS certificates.
+sudo apt install -y \
+  apache2 \
+  php8.4-cli \
+  php8.4-fpm \
+  php8.4-mbstring \
+  php8.4-xml \
+  phpunit \
+  certbot \
+  python3-certbot-apache \
+  git \
+  curl \
+  ca-certificates
+
+# Enable and start PHP-FPM and Apache immediately and on future boots.
+sudo systemctl enable --now php8.4-fpm apache2
+```
+
+The repository also includes a pinned PHPUnit 10 PHAR under `tools/`, so the
+project test command does not depend on the version installed by Debian:
+
+```bash
+# Run the repository's pinned PHPUnit test runner.
+php tools/phpunit-10.phar
+```
+
+The `php8.4-mbstring` and `php8.4-xml` packages in the installation command
+provide the extensions required by that PHAR, including multibyte strings,
+DOM, XML, and XMLWriter support.
+
+Then clone and initialize the application:
+
+```bash
+# Download the stable source tree.
 git clone https://github.com/cqt470/php-abuseipdb-api.git
 cd php-abuseipdb-api
+
+# Create the local secret configuration from the template.
 cp example.env.php env.php
+
+# Create the runtime directories and an empty JSON cache.
 mkdir -p cache logs
 printf '[]' > cache/ips.json
 ```
@@ -35,6 +84,7 @@ not a dotenv file, and must never be committed.
 For local development:
 
 ```bash
+# Start PHP's development server with src/ as its document root.
 php -S localhost:8000 -t src/
 ```
 
