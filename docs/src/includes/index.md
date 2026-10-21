@@ -1,40 +1,20 @@
-# index.php
+# Include aggregator
 
-Usage documentation for [`src/includes/index.php`](../../../src/includes/index.php).
+[`src/includes/index.php`](../../src/includes/index.php) loads the shared
+include files in this order:
 
-## Purpose
+1. `handler_errors.php`
+2. `enums.php`
+3. `logger.php`
+4. `security.php`
+5. `cache.php`
+6. `endpoint.php`
+7. `webhook.php`
 
-`index.php` is an include aggregator that loads all core include files in a single entry point.
-
-## Inclusion
-
-Endpoint and include files load the aggregator with:
-
-```php
-include_once __DIR__ . "/../includes/index.php";
-```
-
-## Exposed behavior
-
-- Includes these files, in order:
-  - [`src/includes/enums.php`](./enums.md)
-  - [`src/includes/logger.php`](./logger.md)
-  - [`src/includes/security.php`](./security.md)
-  - [`src/includes/cache.php`](./cache.md)
-  - [`src/includes/endpoint.php`](./endpoint.md)
-  - [`src/includes/webhook.php`](./webhook.md)
-
-## Minimal usage example
+Use it from an endpoint with:
 
 ```php
 include_once __DIR__ . "/../includes/index.php";
 ```
 
-## Internal dependencies
-
-- This file directly depends on all include files listed above.
-
-## Known limitations and TODOs
-
-- No explicit TODO in this file.
-- The include list is static and manually maintained.
+The list is static and must be updated when a new shared include is added.
