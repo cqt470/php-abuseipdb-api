@@ -15,7 +15,7 @@
          * @return void
          */
         public static function use_discord(array $embed_data = []): void{
-            if (!\ENABLE_DISCORD_WEBHOOK) {
+            if(!\ENABLE_DISCORD_WEBHOOK){
                 return;
             }
 
@@ -42,6 +42,11 @@
             ];
 
             $context = stream_context_create($options);
+
+            if(\URL_DISCORD_WEBHOOK == "YOUR_KEY_HERE"){
+                throw new Exception("Set a Discord webhook URL.");
+            }
+
             $response = file_get_contents(\URL_DISCORD_WEBHOOK, false, $context);
 
             if ($response === false) {
