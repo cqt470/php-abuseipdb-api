@@ -44,6 +44,11 @@
             if(!Security::validate_ip($ip)) $this->send_error("The IP doesn't seem to be valid.");
             
             $info = Security::get_ip_info($ip);
+
+            if(gettype($info) == "integer"){
+                $this->send_error("Got a $info HTTP code from the API.", $info);
+            }
+
             $this->add_response_parameter("info", $info);
 
             $this->logger->log("api", log_priority::info, "IP succesfully checked", true);

@@ -122,9 +122,9 @@
          *
          * @param string $ip the IP to check. If null, Security::get_ip() will be used.
          * @param boolean $skip_cache request data from AbuseIPDB API even if the IP has been cached?
-         * @return ?array
+         * @return array|int
          */
-        public static function get_ip_info(?string $ip = null, bool $skip_cache = false): ?array{
+        public static function get_ip_info(?string $ip = null, bool $skip_cache = false): array|int{
             $cache = new Cache(\CACHE_FILE);
 
             $caching = \ENABLE_CACHING;
@@ -156,7 +156,7 @@
                     return $data;
                 default:
                     self::logger()->log("cache", log_priority::warning, "Got a \"$http_code\" HTTP code from the API");
-                    return null;
+                    return $http_code;
             }
         }
 
