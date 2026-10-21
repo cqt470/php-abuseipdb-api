@@ -46,7 +46,19 @@
             $info = Security::get_ip_info($ip);
 
             if(gettype($info) == "integer"){
-                $this->send_error("Got a $info HTTP code from the API.", $info);
+                $msg = "";
+                switch($info){
+                    case 401:
+                        $msg = "Got a $info HTTP code from the API: check your token.";
+                        break;
+                    case 429:
+                        $msg = "Got a $info HTTP code from the API: you're sending too many requests.";
+                        break;
+                    default:
+                        $msg = "Got a $info HTTP code from the API.";
+                        break;
+                }
+                $this->send_error($msg, $info);
             }
 
             $this->add_response_parameter("info", $info);
