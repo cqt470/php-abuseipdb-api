@@ -49,7 +49,7 @@
 
             $response = file_get_contents(\URL_DISCORD_WEBHOOK, false, $context);
 
-            if ($response === false) {
+            if($response === false){
                 throw new Exception("Didn't get a response from Discord");
             }
 
