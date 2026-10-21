@@ -6,8 +6,6 @@
 
     use PHPUnit\Framework\Attributes\Group;
     use PHPUnit\Framework\TestCase;
-    use Zexa\Includes\Logger;
-    use Zexa\Includes\log_priority;
 
     #[Group('concurrency')]
     #[Group('logger')]
@@ -18,9 +16,13 @@
         private const PAYLOAD_BYTES    = 2048;
 
         private string $tmpDir;
+        private string $projectRoot;
 
         protected function setUp(): void
         {
+            // __DIR__ = <project>/tests/Unit  →  dirname(__DIR__, 2) = <project>
+            $this->projectRoot = dirname(__DIR__, 2);
+
             $this->tmpDir = sys_get_temp_dir()
                 . DIRECTORY_SEPARATOR
                 . 'php-abuseipdb-logger-concurrency-'
@@ -69,10 +71,13 @@
                     2 => ['pipe', 'w'],
                 ];
 
+                // Il primo argomento è la project root: il worker la usa per
+                // risolvere src/includes/{enums,security,logger}.php
                 $command = [
                     PHP_BINARY,
                     '-d', 'opcache.enable_cli=0',
                     $workerPath,
+                    $this->projectRoot,
                     $logDir,
                     (string) $worker,
                     (string) self::LINES_PER_WORKER,
@@ -103,8 +108,6 @@
 
             $this->assertFileExists($logFile);
 
-            // Il formato atteso è quello prodotto da Logger::log():
-            // [PRIORITY] ISO8601 - METHOD - text (Origin: ip)
             $linePattern = '/^'
                 . '\[(?<priority>[A-Z]+)\]'
                 . ' (?<ts>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2})'
@@ -171,14 +174,9 @@
             );
         }
 
-        /**
-         * Canary statico: se qualcuno rimuove un lock esplicito dal Logger,
-         * la CI deve diventare rossa indipendentemente dal comportamento
-         * del filesystem.
-         */
         public function testLoggerSourceUsesAnExplicitLock(): void
         {
-            $loggerPath = __DIR__ . '/../../src/includes/logger.php';
+            $loggerPath = $this->projectRoot . '/src/includes/logger.php';
             $this->assertFileExists($loggerPath, 'File logger.php non trovato');
 
             $source = file_get_contents($loggerPath);
@@ -197,26 +195,24 @@
 
     declare(strict_types=1);
 
-    $root = dirname(__DIR__);
-
-    require_once $root . '/src/includes/enums.php';
-    require_once $root . '/src/includes/security.php';
-    require_once $root . '/src/includes/logger.php';
-
-    if ($argc < 5) {
-        fwrite(STDERR, "Uso: logger_worker.php <logDir> <workerId> <lineCount> <payloadBytes>\n");
+    if ($argc < 6) {
+        fwrite(STDERR, "Uso: logger_worker.php <projectRoot> <logDir> <workerId> <lineCount> <payloadBytes>\n");
         exit(2);
     }
 
-    $logDir       = $argv[1];
-    $workerId     = (int) $argv[2];
-    $lineCount    = (int) $argv[3];
-    $payloadBytes = (int) $argv[4];
+    $projectRoot  = $argv[1];
+    $logDir       = $argv[2];
+    $workerId     = (int) $argv[3];
+    $lineCount    = (int) $argv[4];
+    $payloadBytes = (int) $argv[5];
 
-    $logger = new \Zexa\Includes\Logger($logDir);
+    require_once $projectRoot . '/src/includes/enums.php';
+    require_once $projectRoot . '/src/includes/security.php';
+    require_once $projectRoot . '/src/includes/logger.php';
+
+    $logger  = new \Zexa\Includes\Logger($logDir);
     $payload = str_repeat('x', $payloadBytes);
 
-    // Simula un contesto HTTP, altrimenti Logger::log() fa fallback su php_sapi_name()
     $_SERVER['REQUEST_METHOD'] = 'GET';
 
     for ($i = 0; $i < $lineCount; $i++) {

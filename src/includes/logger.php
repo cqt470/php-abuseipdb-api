@@ -24,6 +24,8 @@
             if($include_ip) $row .= " (Origin: ".Security::get_ip().")";
             //if(str_contains($filepath, "check")) var_dump($filepath, is_dir($this->folderpath), is_writable($this->folderpath));
 
-            file_put_contents($filepath, "$row\n", FILE_APPEND);
+            if(file_put_contents($filepath, "$row\n", FILE_APPEND | LOCK_EX) == false){
+                error_log("Logger: write filed in log file: {$filepath}");
+            }
         }
     }
