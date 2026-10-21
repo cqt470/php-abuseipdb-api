@@ -113,8 +113,11 @@ sudo git checkout v1.0.0-stable
 # Copy the configuration template; edit the resulting file before use.
 sudo cp example.env.php env.php
 
-# Create runtime storage and initialize the JSON cache.
+# Create runtime directories. PHP creates individual log files automatically,
+# but Cache requires cache/ips.json to exist before the first request.
 sudo mkdir -p cache logs
+
+# Initialize the cache file once with an empty JSON array.
 printf '[]' | sudo tee cache/ips.json > /dev/null
 
 # Give the deployment group ownership of the application tree.

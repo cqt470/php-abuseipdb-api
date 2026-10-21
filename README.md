@@ -15,8 +15,8 @@ endpoint for IP checks and reports.
 
 - PHP 8.1 or newer.
 - HTTPS support in PHP for upstream requests.
-- A writable `cache/ips.json` file.
-- A writable `logs/` directory.
+- A writable `cache/` directory containing an initialized `ips.json` file.
+- A writable `logs/` directory; individual log files are created automatically.
 - No Composer, database, Redis, cURL, or framework is required.
 
 ## Installation
@@ -92,8 +92,12 @@ cd php-abuseipdb-api
 # Create the local secret configuration from the template.
 cp example.env.php env.php
 
-# Create the runtime directories and an empty JSON cache.
+# Create the runtime directories. The cache directory must exist before
+# initializing the cache file.
 mkdir -p cache logs
+
+# Initialize the cache file once. PHP creates log files automatically when
+# Logger writes the first entry.
 printf '[]' > cache/ips.json
 ```
 
