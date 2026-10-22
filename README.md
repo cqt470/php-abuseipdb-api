@@ -19,6 +19,12 @@ endpoint for IP checks and reports.
 - A writable `logs/` directory; individual log files are created automatically.
 - No Composer, database, Redis, cURL, or framework is required.
 
+## Architecture & Workflow
+
+The diagram below illustrates two valid deployment workflows. The recommended setup uses a Cloudflare Tunnel to hide the server's origin IP, while the alternative flow shows a traditional VPS deployment secured by a firewall.
+
+![PHP AbuseIPDB API Workflow](assets/flows.png)
+
 ## Installation
 
 On a fresh Debian 13 (Trixie) container, install the web server, PHP-FPM,
