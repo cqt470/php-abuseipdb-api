@@ -2,13 +2,13 @@
 
 ![PHP Version](https://img.shields.io/badge/PHP-%3E%3D8.1-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Release](https://img.shields.io/badge/release-v1.1.2-green)
+![Release](https://img.shields.io/badge/release-v1.1.3-green)
 
 A self-hosted, zero-dependency PHP proxy for the AbuseIPDB API. The proxy
 keeps the official AbuseIPDB key server-side and exposes one authenticated
 endpoint for IP checks and reports.
 
-> This document describes the 1.1.2 release. The source of truth for
+> This document describes the 1.1.3 release. The source of truth for
 > behavior is the code in [`src/`](./src/).
 
 ## Requirements

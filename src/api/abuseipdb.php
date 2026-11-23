@@ -3,6 +3,7 @@
     
     include_once __DIR__."/../includes/index.php";
 
+    use Zexa\Includes\abuse_category;
     use Zexa\Includes\Endpoint;
     use Zexa\Includes\log_priority;
     use Zexa\Includes\Security;
@@ -76,7 +77,7 @@
             // AbuseIPDB category ids: https://www.abuseipdb.com/categories
             if($categories === []) $this->send_error("Specify at least one category.");
             foreach($categories as $category){
-                if(!is_int($category) || $category < 1 || $category > 23){
+                if(abuse_category::from_input($category) === null){
                     $this->send_error("Categories must be integers between 1 and 23.");
                 }
             }
