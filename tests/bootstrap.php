@@ -5,6 +5,7 @@
 
     @mkdir(dirname(\CACHE_FILE), 0777, true);
     @mkdir(\LOGS_DIR, 0777, true);
+    @mkdir(\QUEUE_DIR, 0777, true);
 
     $_SERVER['REQUEST_METHOD'] = $_SERVER['REQUEST_METHOD'] ?? 'GET';
     $_SERVER['REQUEST_URI']    = $_SERVER['REQUEST_URI']    ?? '/';

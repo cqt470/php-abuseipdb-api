@@ -67,6 +67,27 @@ define("WEBHOOK_USERNAME", "php-abuseipdb-api's Bot");
 
 /*
 |--------------------------------------------------------------------------
+| Queue (Discord notifications and reports sent by a cron job)
+|--------------------------------------------------------------------------
+| When enabled, Discord notifications and reports are queued instead of being
+| sent during the request, and src/cron/flush.php sends them in bulk.
+| Schedule it with cron every 10 minutes (see docs/DEPLOYMENT.md).
+| When disabled, everything is sent immediately, as in 1.1.
+*/
+
+define("ENABLE_QUEUE", false);
+
+// Directory of the queue files. Keep it outside the public document root.
+define("QUEUE_DIR", __DIR__ . "/queue/");
+
+// Maximum number of Discord messages sent by one flush (each holds up to 10 embeds).
+define("DISCORD_MAX_PER_FLUSH", 5);
+
+// Maximum number of reports sent to AbuseIPDB by one flush (the free plan allows 1000 a day).
+define("REPORTS_MAX_PER_FLUSH", 50);
+
+/*
+|--------------------------------------------------------------------------
 | CORS
 |--------------------------------------------------------------------------
 */

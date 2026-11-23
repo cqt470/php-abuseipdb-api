@@ -21,6 +21,11 @@
     define('URL_DISCORD_WEBHOOK', 'http://127.0.0.1:1/disabled');
     define('WEBHOOK_USERNAME', 'test-bot');
 
+    define('ENABLE_QUEUE', false);
+    define('QUEUE_DIR', __DIR__ . '/tmp/queue/');
+    define('DISCORD_MAX_PER_FLUSH', 5);
+    define('REPORTS_MAX_PER_FLUSH', 50);
+
     define('CORS_ALLOW_ORIGIN', '*');
     define('CORS_ALLOW_HEADERS', 'Content-Type, Authorization');
     

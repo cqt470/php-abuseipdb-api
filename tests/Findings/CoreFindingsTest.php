@@ -130,6 +130,27 @@
             $this->assertCount($writers * $per, $data, 'entries lost by concurrent writers');
         }
 
+        /** Concurrent queue writers (push, drain, requeue) must not lose items. */
+        public function test_concurrent_queue_writers_do_not_lose_items(): void
+        {
+            $file = ServerHelper::tmp().'/queue-concurrency.json';
+            file_put_contents($file, '[]');
+            $writers = 8; $per = 25;
+
+            $procs = [];
+            for ($w = 1; $w <= $writers; $w++) {
+                $procs[] = proc_open(
+                    [PHP_BINARY, __DIR__.'/fixtures/queue-writer.php', $file, (string)$w, (string)$per],
+                    [1 => ['file', ServerHelper::tmp().'/writer.log', 'a'], 2 => ['file', ServerHelper::tmp().'/writer.log', 'a']],
+                    $pipes
+                );
+            }
+            foreach ($procs as $p) proc_close($p);
+
+            $data = json_decode(file_get_contents($file), true) ?? [];
+            $this->assertCount($writers * $per, $data, 'items lost by concurrent queue writers');
+        }
+
         /** A plain lookup must not need the exclusive lock: readers must not queue behind each other. */
         public function test_check_for_entry_does_not_wait_for_other_readers(): void
         {
