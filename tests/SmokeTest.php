@@ -8,7 +8,7 @@
     final class SmokeTest extends TestCase{
         public function test_constants_are_the_test_ones(): void{
             $this->assertSame('test', ENVIRONMENT);
-            $this->assertStringContainsString('/tests/tmp/', CACHE_FILE, 'Cache must be isolated');
+            $this->assertStringContainsString('/tests/tmp/', str_replace('\\', '/', CACHE_FILE), 'Cache must be isolated');
             $this->assertStringContainsString('127.0.0.1', ABUSEIPDB_BASE_URL, 'Must point to stub');
             $this->assertFalse(ENABLE_DISCORD_WEBHOOK);
         }

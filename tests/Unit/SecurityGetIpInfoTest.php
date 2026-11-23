@@ -37,9 +37,13 @@
             }
 
             $router = __DIR__ . '/fixtures/mock-abuseipdb-router.php';
-            $cmd = sprintf('php -S %s:%d %s', $host, $port, escapeshellarg($router));
+            // array form: no shell wrapper, so proc_terminate() really stops the
+            // server on Windows too (with a string command it only kills cmd.exe)
+            $cmd = [PHP_BINARY, '-S', "$host:$port", $router];
 
-            $descriptors = [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
+            // the server output is not read: send it to the null device so no pipe can fill up
+            $null = DIRECTORY_SEPARATOR === '\\' ? 'NUL' : '/dev/null';
+            $descriptors = [0 => ['pipe', 'r'], 1 => ['file', $null, 'w'], 2 => ['file', $null, 'w']];
             self::$server_proc = proc_open($cmd, $descriptors, $pipes);
             self::$server_owned = is_resource(self::$server_proc);
 

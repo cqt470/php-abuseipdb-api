@@ -4,4 +4,4 @@ cache/ips.json
 .aider*
 logs/*
 .phpunit.cache/
-tests/tmp/
+tests/tmp/tests/Unit/fixtures/last_request.log
