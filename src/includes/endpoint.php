@@ -133,7 +133,7 @@
             header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
             header("Access-Control-Allow-Headers: ".\CORS_ALLOW_HEADERS);
             
-            if($_SERVER['REQUEST_METHOD'] === 'OPTIONS'){
+            if(($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS'){
                 http_response_code(204);
                 exit;
             }

@@ -19,7 +19,7 @@
             $filepath = $this->folderpath."/$category.log";
             $time = date("c");
             $_priority = strtoupper($priority->value);
-            $method = $_SERVER["REQUEST_METHOD"];
+            $method = $_SERVER["REQUEST_METHOD"] ?? "CLI"; // not set in CLI/cron
             $row = "[$_priority] $time - $method - $text";
             if($include_ip) $row .= " (Origin: ".Security::get_ip().")";
             //if(str_contains($filepath, "check")) var_dump($filepath, is_dir($this->folderpath), is_writable($this->folderpath));

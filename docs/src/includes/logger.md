@@ -17,7 +17,8 @@ log(
 
 The constructor resolves the directory with `realpath()` and throws an
 `Exception` when it does not exist or is not a directory. `log()` writes to
-`<folderpath>/<category>.log` using `FILE_APPEND | LOCK_EX`.
+`<folderpath>/<category>.log` using `FILE_APPEND | LOCK_EX`. Outside an HTTP
+request (CLI, cron) the method column contains `CLI`.
 
 Rows have this shape:
 
