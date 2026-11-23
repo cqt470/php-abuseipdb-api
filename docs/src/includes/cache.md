@@ -34,6 +34,7 @@ row is written to `cache.log`; fix or reset the file to `[]` manually.
 ## Storage and limitations
 
 The default file is `CACHE_FILE` (`cache/ips.json`). Values are currently
-typed as strings by the lookup methods. Cache reads and rewrites do not use
-file locking, so deployments with concurrent writers should provide suitable
-filesystem coordination.
+typed as strings by the lookup methods. Every read-modify-write cycle runs
+under an exclusive `flock()` and reads use a shared lock, so concurrent
+requests cannot overwrite each other's entries. Discord notifications are sent
+after the lock is released.

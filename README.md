@@ -2,13 +2,13 @@
 
 ![PHP Version](https://img.shields.io/badge/PHP-%3E%3D8.1-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Release](https://img.shields.io/badge/release-v1.0.10-green)
+![Release](https://img.shields.io/badge/release-v1.0.11-green)
 
 A self-hosted, zero-dependency PHP proxy for the AbuseIPDB API. The proxy
 keeps the official AbuseIPDB key server-side and exposes one authenticated
 endpoint for IP checks and reports.
 
-> This document describes the 1.0.10 release. The source of truth for
+> This document describes the 1.0.11 release. The source of truth for
 > behavior is the code in [`src/`](./src/).
 
 ## Requirements
@@ -205,8 +205,8 @@ The complete request and error reference is
 Checks use `cache/ips.json` when `ENABLE_CACHING` is enabled. Entries contain
 the upstream `data` fields plus `added_at`. Expired entries are removed during
 lookups and trigger a gray `TTL Reached` Discord notification. New entries
-trigger a green `New IP added to cache` notification. Cache rewrites do not use
-file locking.
+trigger a green `New IP added to cache` notification. Every cache rewrite runs
+under an exclusive `flock()`, so concurrent requests do not lose entries.
 
 ### Logging
 
@@ -238,7 +238,6 @@ trusted proxy list. Invalid or missing `REMOTE_ADDR` falls back to
 
 - No application-level rate limiting.
 - No automatic upstream retry.
-- Cache writes are not locked.
 - `env.php` is loaded from the repository root; moving it outside the webroot
   is planned but not implemented.
 
