@@ -98,9 +98,11 @@ AbuseIPDB.
 | 401 | `Unauthenticated.` | Missing token |
 | 403 | `Unauthorized.` | Token rejected outside development |
 | 405 | `POST method required.` | Non-POST request |
+| 4xx/5xx | `Got a <code> HTTP code from the API...` | AbuseIPDB answered with an error status, which is forwarded |
 
 ## Upstream behavior
 
-The endpoint forwards the decoded upstream response even when the upstream
-request reports an error. The `check` helper returns `null` for non-200 status
-codes; the `report` action does not perform a local HTTP status check.
+When AbuseIPDB answers with a non-2xx status, both actions answer with
+`success: false` and the same HTTP status (401 and 429 get a specific
+message). For `report`, the decoded upstream error body is included in
+`parameters.info`. Error responses from `check` are never cached.

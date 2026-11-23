@@ -45,21 +45,7 @@
             
             $info = Security::get_ip_info($ip);
 
-            if(gettype($info) == "integer"){
-                $msg = "";
-                switch($info){
-                    case 401:
-                        $msg = "Got a $info HTTP code from the API: check your token.";
-                        break;
-                    case 429:
-                        $msg = "Got a $info HTTP code from the API: you're sending too many requests.";
-                        break;
-                    default:
-                        $msg = "Got a $info HTTP code from the API.";
-                        break;
-                }
-                $this->send_error($msg, $info);
-            }
+            if(is_int($info)) $this->send_upstream_error($info);
 
             $this->add_response_parameter("info", $info);
 
@@ -109,10 +95,35 @@
 
             $info = json_decode(file_get_contents(\ABUSEIPDB_BASE_URL."/report", false, $context), true);
 
+            $http_code = 0;
+            if(isset($http_response_header) && preg_match("{HTTP\/\S*\s(\d{3})}", $http_response_header[0], $matches)) $http_code = (int)$matches[1];
+            if($http_code < 200 || $http_code >= 300){
+                $this->logger->log("api", log_priority::warning, "Got a \"$http_code\" HTTP code from the API while reporting.");
+                $this->add_response_parameter("info", $info);
+                $this->send_upstream_error($http_code);
+            }
+
             $this->add_response_parameter("info", $info);
 
             $this->logger->log("api", log_priority::info, "IP succesfully reported.", true);
             $this->send_success("ok");
+        }
+
+        /**
+         * Forwards an AbuseIPDB error status to the client with a readable message.
+         *
+         * @param int $code the HTTP code received from AbuseIPDB
+         * @return never
+         */
+        private function send_upstream_error(int $code): never{
+            $msg = match($code){
+                401 => "Got a $code HTTP code from the API: check your token.",
+                429 => "Got a $code HTTP code from the API: you're sending too many requests.",
+                default => "Got a $code HTTP code from the API.",
+            };
+
+            // a missing/invalid status means the upstream answer was unusable
+            $this->send_error($msg, $code >= 400 && $code <= 599 ? $code : 502);
         }
     }
 

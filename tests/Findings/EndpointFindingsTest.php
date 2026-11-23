@@ -134,6 +134,7 @@
         {
             $r = self::call(self::NORMAL, ['action' => 'report', 'ip' => '203.0.113.99', 'categories' => [18], 'comment' => 'ssh brute force']);
             $this->assertFalse($r['json']['success'] ?? true, self::describe($r));
+            $this->assertSame(429, $r['status'], self::describe($r));
         }
 
         /** Bad input must give a 400, not a 500. */
