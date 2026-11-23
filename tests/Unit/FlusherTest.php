@@ -68,6 +68,43 @@
             $this->assertSame("a\nb\nc", Flusher::describe(['a', 'b', 'c'], 100));
         }
 
+        public function test_merge_reports_joins_categories_and_comments_and_keeps_the_first_timestamp(): void
+        {
+            $merged = Flusher::merge_reports(
+                ['ip' => '198.51.100.1', 'categories' => [18, 22], 'comment' => 'ssh', 'timestamp' => '2026-11-23T07:00:00Z', 'queued_at' => 1],
+                ['ip' => '198.51.100.1', 'categories' => [22, 14], 'comment' => 'port scan', 'timestamp' => '2026-11-23T08:00:00Z', 'queued_at' => 2]
+            );
+
+            $this->assertSame([18, 22, 14], $merged['categories']);
+            $this->assertSame("ssh\nport scan", $merged['comment']);
+            $this->assertSame('2026-11-23T07:00:00Z', $merged['timestamp']);
+            $this->assertSame('198.51.100.1', $merged['ip']);
+        }
+
+        public function test_merge_reports_does_not_repeat_a_comment_and_respects_the_length_limit(): void
+        {
+            $same = Flusher::merge_reports(['ip' => 'x', 'categories' => [18], 'comment' => 'ssh'], ['ip' => 'x', 'categories' => [18], 'comment' => 'ssh']);
+            $this->assertSame('ssh', $same['comment']);
+
+            $long = Flusher::merge_reports(['ip' => 'x', 'categories' => [18], 'comment' => str_repeat('a', 1000)], ['ip' => 'x', 'categories' => [18], 'comment' => str_repeat('b', 1000)]);
+            $this->assertSame(Flusher::MAX_COMMENT, mb_strlen($long['comment']));
+        }
+
+        public function test_reports_embed(): void
+        {
+            $this->assertNull(Flusher::reports_embed(['sent' => [], 'retry' => [], 'discarded' => []]));
+
+            $embed = Flusher::reports_embed([
+                'sent' => [['ip' => '198.51.100.1', 'categories' => [22]]],
+                'retry' => [],
+                'discarded' => [['ip' => '198.51.100.2', 'categories' => [18], 'error' => 'HTTP 422']],
+            ]);
+
+            $this->assertSame('Reports: 1 sent, 0 kept for retry, 1 discarded', $embed['title']);
+            $this->assertStringContainsString('`198.51.100.1` (SSH)', $embed['description']);
+            $this->assertStringContainsString('`198.51.100.2` HTTP 422', $embed['description']);
+        }
+
         public function test_chunk_respects_embed_count_and_message_size(): void
         {
             $small = fn() => ['embed' => ['title' => 't', 'description' => 'd'], 'items' => []];

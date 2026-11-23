@@ -6,6 +6,8 @@
     use Zexa\Includes\abuse_category;
     use Zexa\Includes\discord_event;
     use Zexa\Includes\Endpoint;
+    use Zexa\Includes\Flusher;
+    use Zexa\Includes\Queue;
     use Zexa\Includes\log_priority;
     use Zexa\Includes\Security;
     use Zexa\Includes\Webhook;
@@ -82,34 +84,13 @@
                     $this->send_error("Categories must be integers between 1 and 23.");
                 }
             }
-            $categories = implode(",", array_unique($categories));
+            $categories = array_values(array_unique($categories));
 
             if(!self::is_iso8601($timestamp)) $this->send_error("Invalid timestamp string (must be ISO 8601).");
-            
-            // retrieve data
-            $key = \API_KEY_ABUSEIPDB;
-            $body = http_build_query([
-                "ip"         => $ip,
-                "categories" => $categories,
-                "comment"    => $comment,
-                "timestamp"  => $timestamp,
-            ]);
-            $context = stream_context_create([
-                "http" => [
-                    "method" => "POST",
-                    "header" => "Key: $key\r\nAccept: application/json\r\nContent-Type: application/x-www-form-urlencoded\r\n",
-                    "content" => $body,
-                    "ignore_errors" => true, // reads errors on 4xx and 5xx
-                    "timeout" => 16,
-                ]
-            ]);
 
-            // network failures are reported as HTTP code 0 instead of crashing the request
-            $raw = @file_get_contents(\ABUSEIPDB_BASE_URL."/report", false, $context);
-            $info = $raw === false ? null : json_decode($raw, true);
+            if(Queue::enabled()) $this->queue_report(Security::normalize_ip($ip), $categories, $comment, $timestamp);
 
-            $http_code = 0;
-            if(isset($http_response_header) && preg_match("{HTTP\/\S*\s(\d{3})}", $http_response_header[0], $matches)) $http_code = (int)$matches[1];
+            ["code" => $http_code, "info" => $info] = Security::report_ip($ip, $categories, $comment, $timestamp);
             if($http_code < 200 || $http_code >= 300){
                 $this->logger->log("api", log_priority::warning, "Got a \"$http_code\" HTTP code from the API while reporting.");
                 $this->add_response_parameter("info", $info);
@@ -120,6 +101,30 @@
 
             $this->logger->log("api", log_priority::info, "IP succesfully reported.", true);
             $this->send_success("ok");
+        }
+
+        /**
+         * Queues a validated report for the cron flush and answers 202.
+         * Reports on an IP that is already queued are merged into it, because
+         * AbuseIPDB accepts the same IP only once every 15 minutes.
+         *
+         * @param int[] $categories
+         * @return never
+         */
+        private function queue_report(string $ip, array $categories, string $comment, string $timestamp): never{
+            $item = ["ip" => $ip, "categories" => $categories, "comment" => $comment, "timestamp" => $timestamp];
+
+            try{
+                $queued = Queue::open(Queue::REPORTS)->push_or_merge("ip", $item, [Flusher::class, "merge_reports"]);
+            }catch(\Throwable $e){
+                $this->logger->log("queue", log_priority::critical, "Cannot queue a report: ".$e->getMessage());
+                $queued = false;
+            }
+            if(!$queued) $this->send_error("The report queue is unavailable.", 500);
+
+            $this->logger->log("api", log_priority::info, "Report queued ($ip).", true);
+            $this->add_response_parameter("ip", $ip);
+            $this->send_success("queued", 202);
         }
 
         /**

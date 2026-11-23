@@ -38,6 +38,8 @@
     if ($path === '/report') {
         parse_str(file_get_contents('php://input'), $p);
         if (($p['ip'] ?? '') === '203.0.113.99') { fail(429, 'Daily rate limit of 1000 requests exceeded.'); return; }
+        if (($p['ip'] ?? '') === '203.0.113.97') { fail(429, 'You can only report the same IP address (`203.0.113.97`) once in 15 minutes.'); return; }
+        if (($p['ip'] ?? '') === '203.0.113.98') { fail(422, 'The comment may not be greater than 1024 characters.'); return; }
 
         echo json_encode(['data' => ['ipAddress' => $p['ip'] ?? null, 'abuseConfidenceScore' => 100]]);
         return;

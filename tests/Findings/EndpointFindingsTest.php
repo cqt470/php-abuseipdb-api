@@ -229,6 +229,32 @@
             $this->assertSame('198.51.100.63', $queued[array_search('cache_added', $events, true)]['context']['ip']);
         }
 
+        /** With the queue on, a valid report is queued (202) and merged with the one already queued for that IP. */
+        public function test_reports_are_queued_and_merged_when_the_queue_is_enabled(): void
+        {
+            $before = self::upstream_hits();
+            $first  = self::call(self::QUEUED, ['action' => 'report', 'ip' => '198.51.100.64', 'categories' => [18], 'comment' => 'ssh']);
+            $second = self::call(self::QUEUED, ['action' => 'report', 'ip' => '198.51.100.64', 'categories' => [22, 18], 'comment' => 'again']);
+
+            $this->assertSame(202, $first['status'], self::describe($first));
+            $this->assertSame('queued', $first['json']['message'] ?? null, self::describe($first));
+            $this->assertSame(202, $second['status'], self::describe($second));
+            $this->assertSame($before, self::upstream_hits(), 'a queued report must not reach AbuseIPDB during the request');
+
+            $queued = json_decode((string)@file_get_contents(ServerHelper::tmp().'/'.self::QUEUED.'/queue/reports.json'), true) ?? [];
+            $mine = array_values(array_filter($queued, fn($r) => ($r['ip'] ?? null) === '198.51.100.64'));
+            $this->assertCount(1, $mine, 'reports on the same IP must be merged');
+            $this->assertSame([18, 22], $mine[0]['categories']);
+            $this->assertSame("ssh\nagain", $mine[0]['comment']);
+        }
+
+        /** Validation still happens before queueing. */
+        public function test_invalid_report_is_400_even_when_the_queue_is_enabled(): void
+        {
+            $r = self::call(self::QUEUED, ['action' => 'report', 'ip' => '198.51.100.65', 'categories' => [99], 'comment' => 'x']);
+            $this->assertSame(400, $r['status'], self::describe($r));
+        }
+
         /** The example placeholder key must never authenticate anybody. */
         public function test_placeholder_custom_key_is_rejected(): void
         {

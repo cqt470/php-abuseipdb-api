@@ -186,6 +186,43 @@
         }
 
         /**
+         * Sends a report to AbuseIPDB (POST /report). Used by the report action and by the cron flush.
+         *
+         * @param string $ip the reported IP
+         * @param int[] $categories AbuseIPDB category ids, already validated
+         * @param string $comment
+         * @param string $timestamp ISO 8601, already validated
+         * @return array{code: int, info: mixed} the HTTP code (0 = AbuseIPDB unreachable) and the decoded answer
+         */
+        public static function report_ip(string $ip, array $categories, string $comment, string $timestamp): array{
+            $key = \API_KEY_ABUSEIPDB;
+            $body = http_build_query([
+                "ip"         => $ip,
+                "categories" => implode(",", array_unique($categories)),
+                "comment"    => $comment,
+                "timestamp"  => $timestamp,
+            ]);
+            $context = stream_context_create([
+                "http" => [
+                    "method" => "POST",
+                    "header" => "Key: $key\r\nAccept: application/json\r\nContent-Type: application/x-www-form-urlencoded\r\n",
+                    "content" => $body,
+                    "ignore_errors" => true, // reads errors on 4xx and 5xx
+                    "timeout" => 16,
+                ]
+            ]);
+
+            // network failures are reported as HTTP code 0 instead of crashing the request
+            $raw = @file_get_contents(\ABUSEIPDB_BASE_URL."/report", false, $context);
+            $info = $raw === false ? null : json_decode($raw, true);
+
+            $http_code = 0;
+            if(isset($http_response_header) && preg_match("{HTTP\/\S*\s(\d{3})}", $http_response_header[0], $matches)) $http_code = (int)$matches[1];
+
+            return ["code" => $http_code, "info" => $info];
+        }
+
+        /**
          * Returns the SHA256 hash of a string using the SALT_SHA256 salt or the specified one, if provided
          *
          * @param string $input the string

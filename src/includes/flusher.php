@@ -20,7 +20,108 @@
          * @return array statistics, printed by the cron script
          */
         public function run(): array{
-            return ["discord" => $this->flush_discord()];
+            $reports = $this->flush_reports();
+            $summary = self::reports_embed($reports);
+
+            return [
+                "reports" => ["sent" => count($reports["sent"]), "retry" => count($reports["retry"]), "discarded" => count($reports["discarded"])],
+                "discord" => $this->flush_discord($summary === null ? [] : [$summary]),
+            ];
+        }
+
+        /**
+         * Merges a new report into the one already queued for the same IP:
+         * categories are joined, different comments are concatenated (AbuseIPDB allows 1024 characters),
+         * the timestamp of the first report is kept.
+         */
+        public static function merge_reports(array $queued, array $new): array{
+            $categories = array_values(array_unique(array_merge((array)($queued["categories"] ?? []), (array)($new["categories"] ?? []))));
+
+            $comments = array_values(array_unique(array_filter([(string)($queued["comment"] ?? ""), (string)($new["comment"] ?? "")], "strlen")));
+            $comment = mb_substr(implode("\n", $comments), 0, self::MAX_COMMENT);
+
+            return ["categories" => $categories, "comment" => $comment] + $queued;
+        }
+
+        /** AbuseIPDB limit for a report comment */
+        public const MAX_COMMENT = 1024;
+
+        /**
+         * Sends the queued reports to AbuseIPDB, one /report per IP, at most REPORTS_MAX_PER_FLUSH.
+         *
+         * - 2xx: sent;
+         * - network error, 5xx, 429: temporary, the report stays queued for the next flush.
+         *   A 429 that is not the "same IP once in 15 minutes" rule is the daily limit:
+         *   the remaining reports are not even tried;
+         * - any other 4xx: permanent, the report is discarded (and logged).
+         *
+         * @return array{sent: array, retry: array, discarded: array} the reports in each outcome, discarded ones with "error"
+         */
+        public function flush_reports(): array{
+            $result = ["sent" => [], "retry" => [], "discarded" => []];
+
+            $queue = Queue::open(Queue::REPORTS);
+            $items = $queue->drain(max(1, (int)\REPORTS_MAX_PER_FLUSH));
+
+            $stop = false;
+            foreach($items as $item){
+                $ip = (string)($item["ip"] ?? "");
+                if($stop){
+                    $result["retry"][] = $item;
+                    continue;
+                }
+                if($ip === "" || !Security::validate_ip($ip) || !is_array($item["categories"] ?? null)){
+                    $result["discarded"][] = $item + ["error" => "malformed queued report"];
+                    $this->logger->log("queue", log_priority::warning, "Discarded a malformed queued report: ".json_encode($item));
+                    continue;
+                }
+
+                ["code" => $code, "info" => $info] = Security::report_ip($ip, $item["categories"], (string)($item["comment"] ?? ""), (string)($item["timestamp"] ?? date("c")));
+                $detail = (string)($info["errors"][0]["detail"] ?? "");
+
+                if($code >= 200 && $code < 300){
+                    $result["sent"][] = $item;
+                    $this->logger->log("api", log_priority::info, "Queued report sent ($ip).");
+                }elseif($code === 0 || $code === 429 || $code >= 500){
+                    $result["retry"][] = $item;
+                    $this->logger->log("api", log_priority::warning, "Queued report for $ip got HTTP $code, kept for the next flush. $detail");
+                    if($code === 429 && !str_contains($detail, "15 minutes")) $stop = true;
+                }else{
+                    $result["discarded"][] = $item + ["error" => "HTTP $code".($detail === "" ? "" : ": $detail")];
+                    $this->logger->log("api", log_priority::warning, "Queued report for $ip discarded, HTTP $code. $detail");
+                }
+            }
+
+            // retries go back to the head of the queue, before anything queued meanwhile
+            $queue->requeue(array_map(fn($item) => array_diff_key($item, ["error" => true]), $result["retry"]));
+            return $result;
+        }
+
+        /**
+         * The Discord summary of a reports flush, or null if nothing was processed
+         */
+        public static function reports_embed(array $result): ?array{
+            $sent = count($result["sent"]);
+            $retry = count($result["retry"]);
+            $discarded = count($result["discarded"]);
+            if($sent + $retry + $discarded === 0) return null;
+
+            $lines = [];
+            foreach($result["sent"] as $item) $lines[] = "✅ `{$item["ip"]}` ".self::category_names($item["categories"] ?? []);
+            foreach($result["retry"] as $item) $lines[] = "⏳ `{$item["ip"]}` kept for the next flush";
+            foreach($result["discarded"] as $item) $lines[] = "❌ `".($item["ip"] ?? "?")."` ".($item["error"] ?? "");
+
+            return [
+                "title" => "Reports: $sent sent, $retry kept for retry, $discarded discarded",
+                "description" => self::describe($lines),
+                "color" => $discarded > 0 ? "#e74c3c" : ($retry > 0 ? "#f39c12" : "#2ecc71"),
+                "timestamp" => date("c"),
+            ];
+        }
+
+        private static function category_names(array $ids): string{
+            $names = array_map(fn($id) => abuse_category::from_input($id)?->label() ?? (string)$id, $ids);
+            return $names === [] ? "" : "(".implode(", ", $names).")";
         }
 
         /**

@@ -156,6 +156,61 @@
             $this->assertSame([], self::discord_messages(self::$discord_log));
         }
 
+        // ---------- reports ----------
+
+        private static function report(string $ip, array $categories = [18]): array
+        {
+            return ['ip' => $ip, 'categories' => $categories, 'comment' => 'test', 'timestamp' => '2026-11-23T07:55:19Z', 'queued_at' => time()];
+        }
+
+        private static function reported_ips(): array
+        {
+            $ips = [];
+            foreach (file(self::$upstream_hits, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
+                if (str_starts_with($line, 'POST /report')) $ips[] = $line;
+            }
+            return $ips;
+        }
+
+        public function test_queued_reports_are_sent_retried_or_discarded(): void
+        {
+            $this->queue('reports', [
+                self::report('198.51.100.10', [22]),
+                self::report('203.0.113.97'),  // 429 "once in 15 minutes": temporary
+                self::report('203.0.113.98'),  // 422: permanent
+                self::report('198.51.100.11'),
+            ]);
+
+            $r = $this->flush();
+
+            $this->assertSame(0, $r['code'], $r['out']);
+            $this->assertSame(['sent' => 2, 'retry' => 1, 'discarded' => 1], json_decode($r['out'], true)['reports'] ?? null, $r['out']);
+            $this->assertSame(['203.0.113.97'], array_column($this->queue('reports'), 'ip'), 'only the temporary failure stays queued');
+
+            $embeds = self::discord_messages(self::$discord_log)[0]['embeds'] ?? [];
+            $this->assertSame('Reports: 2 sent, 1 kept for retry, 1 discarded', $embeds[0]['title'] ?? null);
+        }
+
+        public function test_daily_limit_stops_the_flush_and_keeps_every_report(): void
+        {
+            $this->queue('reports', [self::report('203.0.113.99'), self::report('198.51.100.12')]);
+
+            $this->flush();
+
+            $this->assertCount(1, self::reported_ips(), 'after the daily limit no other report must be tried');
+            $this->assertSame(['203.0.113.99', '198.51.100.12'], array_column($this->queue('reports'), 'ip'));
+        }
+
+        public function test_at_most_reports_max_per_flush_reports_are_sent(): void
+        {
+            $this->queue('reports', array_map(fn($i) => self::report("198.51.100.$i"), range(20, 24)));
+
+            $r = $this->flush(['FINDINGS_REPORTS_MAX' => '2']);
+
+            $this->assertCount(2, self::reported_ips(), $r['out']);
+            $this->assertCount(3, $this->queue('reports'));
+        }
+
         // ---------- the script itself ----------
 
         public function test_flush_refuses_to_run_over_http(): void
