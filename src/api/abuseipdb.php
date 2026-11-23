@@ -96,7 +96,9 @@
                 ]
             ]);
 
-            $info = json_decode(file_get_contents(\ABUSEIPDB_BASE_URL."/report", false, $context), true);
+            // network failures are reported as HTTP code 0 instead of crashing the request
+            $raw = @file_get_contents(\ABUSEIPDB_BASE_URL."/report", false, $context);
+            $info = $raw === false ? null : json_decode($raw, true);
 
             $http_code = 0;
             if(isset($http_response_header) && preg_match("{HTTP\/\S*\s(\d{3})}", $http_response_header[0], $matches)) $http_code = (int)$matches[1];
@@ -140,6 +142,7 @@
          */
         private function send_upstream_error(int $code): never{
             $msg = match($code){
+                0 => "AbuseIPDB could not be reached.",
                 401 => "Got a $code HTTP code from the API: check your token.",
                 429 => "Got a $code HTTP code from the API: you're sending too many requests.",
                 default => "Got a $code HTTP code from the API.",

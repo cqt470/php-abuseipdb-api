@@ -105,6 +105,7 @@ AbuseIPDB.
 | 403 | `Unauthorized.` | Token rejected outside development |
 | 405 | `POST method required.` | Non-POST request |
 | 4xx/5xx | `Got a <code> HTTP code from the API...` | AbuseIPDB answered with an error status, which is forwarded |
+| 502 | `AbuseIPDB could not be reached.` | Network error or timeout towards AbuseIPDB |
 
 ## Upstream behavior
 

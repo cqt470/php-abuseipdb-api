@@ -172,6 +172,13 @@
             $this->assertContains($r['status'], [502, 503, 504], self::describe($r));
         }
 
+        /** Same for report. */
+        public function test_report_with_upstream_down_is_gateway_error(): void
+        {
+            $r = self::call(self::DEAD_UP, ['action' => 'report', 'ip' => '198.51.100.51', 'categories' => [18], 'comment' => 'x']);
+            $this->assertSame(502, $r['status'], self::describe($r));
+        }
+
         /** Discord down must not turn a failed login into a 500. */
         public function test_failed_auth_with_discord_down_is_still_403(): void
         {
