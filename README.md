@@ -18,7 +18,7 @@ endpoint for IP checks and reports.
 - A writable `cache/` directory containing an initialized `ips.json` file.
 - A writable `logs/` directory; individual log files are created automatically.
 - Optional: a writable `queue/` directory and a cron job, when `ENABLE_QUEUE` is on.
-- No Composer, database, Redis, cURL, or framework is required.
+- No Composer, database, Redis, cURL, framework, or `mbstring` is required.
 
 ## Architecture & Workflow
 
@@ -87,7 +87,8 @@ php tools/phpunit-10.phar
 
 The `php8.4-mbstring` and `php8.4-xml` packages in the installation command
 provide the extensions required by that PHAR, including multibyte strings,
-DOM, XML, and XMLWriter support.
+DOM, XML, and XMLWriter support. The application itself, cron flush included,
+does not use them: a production server without the tests can leave them out.
 
 Then clone and initialize the application:
 

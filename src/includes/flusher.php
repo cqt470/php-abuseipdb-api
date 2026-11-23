@@ -38,7 +38,7 @@
             $categories = array_values(array_unique(array_merge((array)($queued["categories"] ?? []), (array)($new["categories"] ?? []))));
 
             $comments = array_values(array_unique(array_filter([(string)($queued["comment"] ?? ""), (string)($new["comment"] ?? "")], "strlen")));
-            $comment = mb_substr(implode("\n", $comments), 0, self::MAX_COMMENT);
+            $comment = self::cut(implode("\n", $comments), self::MAX_COMMENT);
 
             return ["categories" => $categories, "comment" => $comment] + $queued;
         }
@@ -64,36 +64,38 @@
             $items = $queue->drain(max(1, (int)\REPORTS_MAX_PER_FLUSH));
 
             $stop = false;
-            foreach($items as $item){
-                $ip = (string)($item["ip"] ?? "");
-                if($stop){
-                    $result["retry"][] = $item;
-                    continue;
-                }
-                if($ip === "" || !Security::validate_ip($ip) || !is_array($item["categories"] ?? null)){
-                    $result["discarded"][] = $item + ["error" => "malformed queued report"];
-                    $this->logger->log("queue", log_priority::warning, "Discarded a malformed queued report: ".json_encode($item));
-                    continue;
-                }
+            $done = 0; // items whose outcome is known
+            try{
+                foreach($items as $item){
+                    $ip = (string)($item["ip"] ?? "");
+                    if($stop){
+                        $result["retry"][] = $item;
+                    }elseif($ip === "" || !Security::validate_ip($ip) || !is_array($item["categories"] ?? null)){
+                        $result["discarded"][] = $item + ["error" => "malformed queued report"];
+                        $this->logger->log("queue", log_priority::warning, "Discarded a malformed queued report: ".json_encode($item));
+                    }else{
+                        ["code" => $code, "info" => $info] = Security::report_ip($ip, $item["categories"], (string)($item["comment"] ?? ""), (string)($item["timestamp"] ?? date("c")));
+                        $detail = (string)($info["errors"][0]["detail"] ?? "");
 
-                ["code" => $code, "info" => $info] = Security::report_ip($ip, $item["categories"], (string)($item["comment"] ?? ""), (string)($item["timestamp"] ?? date("c")));
-                $detail = (string)($info["errors"][0]["detail"] ?? "");
-
-                if($code >= 200 && $code < 300){
-                    $result["sent"][] = $item;
-                    $this->logger->log("api", log_priority::info, "Queued report sent ($ip).");
-                }elseif($code === 0 || $code === 429 || $code >= 500){
-                    $result["retry"][] = $item;
-                    $this->logger->log("api", log_priority::warning, "Queued report for $ip got HTTP $code, kept for the next flush. $detail");
-                    if($code === 429 && !str_contains($detail, "15 minutes")) $stop = true;
-                }else{
-                    $result["discarded"][] = $item + ["error" => "HTTP $code".($detail === "" ? "" : ": $detail")];
-                    $this->logger->log("api", log_priority::warning, "Queued report for $ip discarded, HTTP $code. $detail");
+                        if($code >= 200 && $code < 300){
+                            $result["sent"][] = $item;
+                            $this->logger->log("api", log_priority::info, "Queued report sent ($ip).");
+                        }elseif($code === 0 || $code === 429 || $code >= 500){
+                            $result["retry"][] = $item;
+                            $this->logger->log("api", log_priority::warning, "Queued report for $ip got HTTP $code, kept for the next flush. $detail");
+                            if($code === 429 && !str_contains($detail, "15 minutes")) $stop = true;
+                        }else{
+                            $result["discarded"][] = $item + ["error" => "HTTP $code".($detail === "" ? "" : ": $detail")];
+                            $this->logger->log("api", log_priority::warning, "Queued report for $ip discarded, HTTP $code. $detail");
+                        }
+                    }
+                    $done++;
                 }
+            }finally{
+                // retries go back to the head of the queue, before anything queued meanwhile;
+                // after a crash, so do the drained reports that were never handled
+                $queue->requeue(array_map(fn($item) => array_diff_key($item, ["error" => true]), [...$result["retry"], ...array_slice($items, $done)]));
             }
-
-            // retries go back to the head of the queue, before anything queued meanwhile
-            $queue->requeue(array_map(fn($item) => array_diff_key($item, ["error" => true]), $result["retry"]));
             return $result;
         }
 
@@ -137,25 +139,43 @@
 
             $queue = Queue::open(Queue::DISCORD);
             $items = $queue->drain();
-
-            $groups = self::group($items);
-            foreach($extra as $embed){
-                // not queued yet: if it cannot be sent it is queued as a generic notification
-                $groups[] = ["embed" => $embed, "items" => [["event" => discord_event::generic->value, "context" => [], "embed" => $embed]]];
-            }
-            if($groups === []) return $stats;
+            // not queued yet: if they cannot be sent they are queued as generic notifications
+            $extra_items = array_map(fn($embed) => ["event" => discord_event::generic->value, "context" => [], "embed" => $embed], $extra);
 
             $requeue = [];
-            $failed = false;
-            foreach(self::chunk($groups) as $i => $message){
-                if(!$failed && $i < \DISCORD_MAX_PER_FLUSH){
-                    if(Webhook::send_embeds(array_column($message, "embed"))){
-                        $stats["messages"]++;
-                        continue;
+            $messages = null;
+            $next = 0; // first message not handled yet
+            try{
+                $groups = self::group($items);
+                foreach($extra_items as $item) $groups[] = ["embed" => $item["embed"], "items" => [$item]];
+                if($groups === []) return $stats;
+
+                $messages = self::chunk($groups);
+                $failed = false;
+                foreach($messages as $i => $message){
+                    if(!$failed && $i < \DISCORD_MAX_PER_FLUSH){
+                        if(Webhook::send_embeds(array_column($message, "embed"))){
+                            $stats["messages"]++;
+                            $next = $i + 1;
+                            continue;
+                        }
+                        $failed = true; // Discord is down or rejecting: keep the rest for the next run
                     }
-                    $failed = true; // Discord is down or rejecting: keep the rest for the next run
+                    foreach($message as $group) array_push($requeue, ...$group["items"]);
+                    $next = $i + 1;
                 }
-                foreach($message as $group) array_push($requeue, ...$group["items"]);
+            }catch(\Throwable $e){
+                // a crash must not lose what was drained: everything not delivered goes back
+                if($messages === null){
+                    $requeue = [...$items, ...$extra_items];
+                }else{
+                    foreach(array_slice($messages, $next) as $message){
+                        foreach($message as $group) array_push($requeue, ...$group["items"]);
+                    }
+                }
+                $queue->requeue($requeue);
+                $this->logger->log("queue", log_priority::error, "Discord flush crashed, ".count($requeue)." notifications kept in queue: ".$e->getMessage());
+                throw $e;
             }
 
             $queue->requeue($requeue);
@@ -236,11 +256,11 @@
             $length = 0;
 
             foreach($lines as $i => $line){
-                $new_length = $length + ($out ? 1 : 0) + mb_strlen($line);
+                $new_length = $length + ($out ? 1 : 0) + self::length($line);
                 // always keep room for the "… and N more" line of the items after this one,
                 // so the line that replaces them (written below) is guaranteed to fit
                 $after = $total - $i - 1;
-                $reserve = $after > 0 ? mb_strlen("\n… and $after more") : 0;
+                $reserve = $after > 0 ? self::length("\n… and $after more") : 0;
 
                 if($new_length + $reserve > $limit){
                     $out[] = "… and ".($total - $i)." more";
@@ -280,6 +300,27 @@
         }
 
         private static function embed_chars(array $embed): int{
-            return mb_strlen((string)($embed["title"] ?? "")) + mb_strlen((string)($embed["description"] ?? ""));
+            return self::length((string)($embed["title"] ?? "")) + self::length((string)($embed["description"] ?? ""));
+        }
+
+        // The project has no dependencies, mbstring included (it is not installed on every server):
+        // UTF-8 characters are counted and cut with PCRE, which is always part of PHP.
+
+        /**
+         * Length of a UTF-8 string in characters. Invalid UTF-8 is counted in bytes,
+         * which is never less than its characters, so the limits still hold.
+         */
+        private static function length(string $text): int{
+            $count = preg_match_all('/./su', $text);
+            return $count === false ? strlen($text) : $count;
+        }
+
+        /**
+         * The first $max characters of a UTF-8 string ($max up to 65535).
+         * Invalid UTF-8 is cut in bytes.
+         */
+        private static function cut(string $text, int $max): string{
+            if(preg_match('/^.{0,'.$max.'}/su', $text, $match) === 1) return $match[0];
+            return substr($text, 0, $max);
         }
     }

@@ -90,6 +90,21 @@
             $this->assertSame(Flusher::MAX_COMMENT, mb_strlen($long['comment']));
         }
 
+        public function test_merge_reports_cuts_multibyte_comments_on_a_character(): void
+        {
+            $long = Flusher::merge_reports(['ip' => 'x', 'categories' => [18], 'comment' => str_repeat('è', 1000)], ['ip' => 'x', 'categories' => [18], 'comment' => str_repeat('€', 1000)]);
+
+            $this->assertSame(Flusher::MAX_COMMENT, mb_strlen($long['comment']), 'the limit counts characters, not bytes');
+            $this->assertTrue(mb_check_encoding($long['comment'], 'UTF-8'), 'a character was cut in half');
+        }
+
+        public function test_describe_counts_characters_not_bytes(): void
+        {
+            // 10 lines of 5 two-byte characters: 59 characters with the newlines (109 bytes);
+            // the limit leaves room for the "… and 1 more" line reserved before the last one
+            $this->assertSame(implode("\n", array_fill(0, 10, 'ééééé')), Flusher::describe(array_fill(0, 10, 'ééééé'), 70));
+        }
+
         public function test_reports_embed(): void
         {
             $this->assertNull(Flusher::reports_embed(['sent' => [], 'retry' => [], 'discarded' => []]));

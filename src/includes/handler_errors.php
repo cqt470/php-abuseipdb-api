@@ -17,16 +17,19 @@
 
         error_log($message);
 
-        http_response_code(500);
-        header("Content-Type: application/json");
-        echo json_encode(["message" => "internal server error! :(", "success" => false]);
+        // from the command line (cron) the message above is enough, and the exit code below reports the failure
+        if(PHP_SAPI !== "cli"){
+            http_response_code(500);
+            header("Content-Type: application/json");
+            echo json_encode(["message" => "internal server error! :(", "success" => false]);
+        }
 
         try{
             $logger = new Logger(\LOGS_DIR);
             $logger->log("errors", log_priority::critical, "Uncaught Exception. $message");
-        }catch(\Throwable $e){
-            return;
+        }catch(\Throwable){
+            // logging is best-effort here, the failure is reported anyway
         }
 
-        exit;
+        exit(1); // a plain exit would end with 0 and a crashed cron would look successful
     });

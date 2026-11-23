@@ -7,6 +7,16 @@ HTTP it answers 403), takes an exclusive non-blocking lock on
 of the run as JSON. Schedule it with cron, see the
 [deployment guide](../../DEPLOYMENT.md#queue-and-cron-optional).
 
+If the run crashes, the error is printed on STDERR, written to
+`logs/errors.log`, and the script exits with code 1. Nothing drained from the
+queues is lost: the reports not handled yet and the notifications not
+delivered go back to the head of their queue, so the next run tries them
+again. Redirect the output in the crontab (`>> logs/cron.log 2>&1`) to keep
+the STDERR messages.
+
+Characters are counted and cut with PCRE (`/u` patterns), not `mbstring`,
+which the project does not require.
+
 The work is done by
 [`src/includes/flusher.php`](../../../src/includes/flusher.php):
 

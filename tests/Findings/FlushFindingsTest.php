@@ -65,12 +65,15 @@
             file_put_contents("$this->dir/ips.json", '[]');
         }
 
-        /** @return array{code:int, out:string} */
-        private function flush(array $env = []): array
+        /**
+         * @param string[] $php_options e.g. ['-n'] to run without php.ini, so without the shared extensions
+         * @return array{code:int, out:string}
+         */
+        private function flush(array $env = [], array $php_options = []): array
         {
             $out = "$this->dir/stdout.txt";
             $proc = proc_open(
-                [PHP_BINARY, __DIR__.'/fixtures/flush-runner.php'],
+                [PHP_BINARY, ...$php_options, __DIR__.'/fixtures/flush-runner.php'],
                 [1 => ['file', $out, 'w'], 2 => ['file', "$this->dir/stderr.txt", 'w']],
                 $pipes, null,
                 array_merge(getenv(), [
@@ -235,5 +238,54 @@
             $this->assertSame(0, $r['code']);
             $this->assertStringContainsString('Another flush is running', $r['out']);
             $this->assertCount(1, $this->queue('discord'), 'the second flush must not touch the queue');
+        }
+
+        public function test_flush_works_without_mbstring(): void
+        {
+            // the project has no dependencies: a server without mbstring crashed on mb_strlen()
+            exec(escapeshellarg(PHP_BINARY).' -n -r '.escapeshellarg('echo extension_loaded("mbstring") ? 1 : 0;'), $loaded);
+            if (($loaded[0] ?? '1') !== '0') $this->markTestSkipped('mbstring is built into this PHP, it cannot be left out');
+
+            $this->queue('discord', [
+                self::notification('failed_auth', '198.51.100.1'),
+                self::notification('failed_auth', '198.51.100.1'), // "× 2": a multibyte character
+                self::notification('cache_added', '198.51.100.2'),
+            ]);
+            $this->queue('reports', [self::report('198.51.100.13')]);
+
+            $r = $this->flush([], ['-n']);
+
+            $this->assertSame(0, $r['code'], $r['out'].file_get_contents("$this->dir/stderr.txt"));
+            $this->assertSame(['sent' => 1, 'retry' => 0, 'discarded' => 0], json_decode($r['out'], true)['reports'] ?? null, $r['out']);
+            $this->assertSame([], $this->queue('discord'));
+            $this->assertStringContainsString('`198.51.100.1` × 2', json_encode(self::discord_messages(self::$discord_log), JSON_UNESCAPED_UNICODE));
+        }
+
+        public function test_a_crash_while_grouping_keeps_the_drained_notifications_and_exits_non_zero(): void
+        {
+            // an IP that is not a string makes group() fail with "Array to string conversion"
+            $broken = ['event' => 'failed_auth', 'context' => ['ip' => ['198.51.100.1']], 'embed' => ['title' => 't', 'description' => 'd'], 'queued_at' => time()];
+            $this->queue('discord', [$broken, $broken, self::notification('generic', '198.51.100.2')]);
+
+            $r = $this->flush();
+
+            $this->assertNotSame(0, $r['code'], 'a crashed flush must not look successful to cron');
+            $this->assertStringNotContainsString('internal server error', $r['out'], 'no HTTP answer on the command line');
+            $this->assertCount(3, $this->queue('discord'), 'drained notifications were lost by the crash');
+        }
+
+        public function test_a_crash_while_reporting_keeps_the_unsent_reports(): void
+        {
+            $this->queue('reports', [
+                self::report('198.51.100.14'),
+                self::report('198.51.100.15', [[18]]), // nested category: "Array to string conversion"
+                self::report('198.51.100.16'),
+            ]);
+
+            $r = $this->flush();
+
+            $this->assertNotSame(0, $r['code']);
+            $this->assertCount(1, self::reported_ips(), 'the first report is sent before the crash');
+            $this->assertSame(['198.51.100.15', '198.51.100.16'], array_column($this->queue('reports'), 'ip'), 'the reports not handled must stay queued');
         }
     }
