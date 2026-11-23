@@ -27,6 +27,10 @@ to cache` notification; a refresh does not.
 `get_entry()` returns the first matching entry or `null`. `delete_entry()`
 rewrites the file without matching entries.
 
+If the cache file contains invalid JSON, lookups behave as an empty cache and
+writes are skipped, so the existing content is never overwritten. A `CRITICAL`
+row is written to `cache.log`; fix or reset the file to `[]` manually.
+
 ## Storage and limitations
 
 The default file is `CACHE_FILE` (`cache/ips.json`). Values are currently

@@ -29,7 +29,7 @@
          * @return boolean
          */
         public function check_for_entry(string $key, string $value): bool{
-            $data = json_decode(file_get_contents($this->filepath), true) ?? [];
+            $data = $this->read() ?? [];
             foreach($data as $ip){
                 // malformed entry (hand-edited or old format): ignore it
                 if(!is_array($ip) || !isset($ip[$key])) continue;
@@ -72,7 +72,8 @@
             $refresh = $this->check_for_entry("ipAddress", $address);
             if($refresh) $this->delete_entry("ipAddress", $address);
 
-            $data = json_decode(file_get_contents($this->filepath), true) ?? [];
+            $data = $this->read();
+            if($data === null) return; // corrupted file: never overwrite it
 
             if($refresh){
                 $this->logger->log("cache", log_priority::info, "IP refreshed in cache ($address).");
@@ -99,7 +100,7 @@
          * @return array|null
          */
         public function get_entry(string $key, string $value): ?array{
-            $data = json_decode(file_get_contents($this->filepath), true) ?? [];
+            $data = $this->read() ?? [];
             foreach($data as $ip){
                 if(is_array($ip) && ($ip[$key] ?? null) == $value) return $ip;
             }
@@ -116,7 +117,8 @@
          */
         public function delete_entry(string $key, string $value): void{
             $new = [];
-            $data = json_decode(file_get_contents($this->filepath), true) ?? [];
+            $data = $this->read();
+            if($data === null) return; // corrupted file: never overwrite it
 
             foreach($data as $ip){
                 if(is_array($ip) && ($ip[$key] ?? null) == $value) continue;
@@ -124,5 +126,24 @@
             }
 
             file_put_contents($this->filepath, json_encode($new, JSON_UNESCAPED_SLASHES));
+        }
+    
+        /**
+         * Reads and decodes the cache file.
+         *
+         * @return array|null the entries, or null if the file is corrupted
+         */
+        private function read(): ?array{
+            $raw = file_get_contents($this->filepath);
+            if($raw === false) return null;
+            if(trim($raw) === "") return [];
+
+            $data = json_decode($raw, true);
+            if(!is_array($data)){
+                $this->logger->log("cache", log_priority::critical, "Cache file is corrupted, it will not be overwritten: {$this->filepath}");
+                return null;
+            }
+
+            return $data;
         }
     }
