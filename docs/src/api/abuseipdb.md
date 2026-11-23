@@ -93,6 +93,12 @@ Optional fields:
 Duplicate categories are removed and the array is joined with commas and sent to AbuseIPDB's
 `/report` endpoint. Reports are not cached.
 
+With `ENABLE_QUEUE` on, the report is validated as above, then queued instead
+of being sent: the answer is `202` with the message `queued` and
+`parameters.ip` (the normalized IP). A report on an IP that is already queued
+is merged into it: categories are joined and different comments concatenated
+(up to 1024 characters). The cron script `src/cron/flush.php` sends the queue.
+
 ```bash
 curl -X POST http://localhost:8000/api/abuseipdb.php \
   -H "Content-Type: application/json" \
@@ -138,6 +144,10 @@ AbuseIPDB.
 | 405 | `POST method required.` | Non-POST request |
 | 4xx/5xx | `Got a <code> HTTP code from the API...` | AbuseIPDB answered with an error status, which is forwarded |
 | 502 | `AbuseIPDB could not be reached.` | Network error or timeout towards AbuseIPDB |
+| 500 | `The report queue is unavailable.` | `ENABLE_QUEUE` on, but the queue file cannot be written (missing `QUEUE_DIR`, corrupted file) |
+
+With `ENABLE_QUEUE` on, a valid `report` answers `202` with the message
+`queued` (not an error).
 
 ## Upstream behavior
 

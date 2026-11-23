@@ -83,9 +83,12 @@ Keep the repository root outside the public document root. Apache serves only
 ├── cache/
 │   └── ips.json
 ├── logs/
+├── queue/          (only with ENABLE_QUEUE)
 ├── src/
 │   ├── api/
 │   │   └── abuseipdb.php
+│   ├── cron/
+│   │   └── flush.php
 │   └── includes/
 ├── tests/
 └── tools/
@@ -274,6 +277,43 @@ trusted proxy.
 exact origin; comma-separated origin lists and wildcard patterns are not
 interpreted as allow-lists.
 
+## Queue and cron (optional)
+
+With `ENABLE_QUEUE` set to `true` in `env.php`, Discord notifications and
+reports are queued in `QUEUE_DIR` and sent by `src/cron/flush.php`. Like
+`cache/` and `logs/`, the queue directory stays outside the document root and
+must be writable by both PHP-FPM and the cron job:
+
+```bash
+# Create the queue directory; queue files are created automatically.
+sudo mkdir -p /var/www/php-abuseipdb/queue
+sudo chown www-data:www-data /var/www/php-abuseipdb/queue
+sudo chmod 0750 /var/www/php-abuseipdb/queue
+
+# Run the flush every 10 minutes as www-data, so it can rewrite the queue files.
+sudo crontab -u www-data -e
+```
+
+Add this line to the crontab:
+
+```text
+*/10 * * * * php /var/www/php-abuseipdb/src/cron/flush.php >> /var/www/php-abuseipdb/logs/cron.log 2>&1
+```
+
+The script refuses to run outside the command line (HTTP 403) and takes its
+own lock, so a slow run never overlaps with the next one. Each run sends at
+most `DISCORD_MAX_PER_FLUSH` Discord messages and `REPORTS_MAX_PER_FLUSH`
+reports; the rest waits for the next run. Run it once by hand to check the
+configuration:
+
+```bash
+sudo -u www-data php /var/www/php-abuseipdb/src/cron/flush.php
+```
+
+It prints statistics such as
+`{"reports":{"sent":0,"retry":0,"discarded":0},"discord":{...}}`. Verify that
+`/queue/discord.json` is not publicly accessible.
+
 ## Logging and rotation
 
 `Logger` writes files such as `logs/auth.log` and `logs/api.log` using
@@ -316,8 +356,9 @@ curl -sS -i -X POST \
 ```
 
 The valid request should return the project's `message`, `success`, and
-optional `parameters` envelope. Verify that `/env.php`, `/cache/ips.json`, and
-`/logs/api.log` are not publicly accessible through the Cloudflare hostname.
+optional `parameters` envelope. Verify that `/env.php`, `/cache/ips.json`,
+`/logs/api.log` and `/queue/reports.json` are not publicly accessible through
+the Cloudflare hostname.
 
 Check the Tunnel and Apache logs if the public request fails:
 
@@ -350,6 +391,12 @@ sudo apache2ctl configtest
 sudo systemctl reload apache2
 ```
 
+Upgrading to 1.2 changes the `check` answer: `reportsSummary` replaces the raw
+`reports` list (see the [API reference](./src/api/abuseipdb.md#check)). The
+cache does not need to be emptied, old entries are summarized when read. The
+new constants `ENABLE_QUEUE`, `QUEUE_DIR`, `DISCORD_MAX_PER_FLUSH` and
+`REPORTS_MAX_PER_FLUSH` are optional: without them the queue stays off.
+
 Rollback to the last verified stable tag and reload Apache:
 
 ```bash
@@ -368,5 +415,5 @@ sudo systemctl reload apache2
 - nginx-specific configuration
 - Windows/IIS and shared hosting
 - application-level rate limiting
-- automatic retries for upstream failures
+- automatic retries for synchronous reports (queued reports are retried by the cron flush)
 - a front-controller router; `/abuseipdb.php` remains the stable interface

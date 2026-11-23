@@ -2,13 +2,13 @@
 
 ![PHP Version](https://img.shields.io/badge/PHP-%3E%3D8.1-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Release](https://img.shields.io/badge/release-v1.1.7-green)
+![Release](https://img.shields.io/badge/release-v1.1.8-green)
 
 A self-hosted, zero-dependency PHP proxy for the AbuseIPDB API. The proxy
 keeps the official AbuseIPDB key server-side and exposes one authenticated
 endpoint for IP checks and reports.
 
-> This document describes the 1.1.7 release. The source of truth for
+> This document describes the 1.1.8 release. The source of truth for
 > behavior is the code in [`src/`](./src/).
 
 ## Requirements
@@ -17,6 +17,7 @@ endpoint for IP checks and reports.
 - HTTPS support in PHP for upstream requests.
 - A writable `cache/` directory containing an initialized `ips.json` file.
 - A writable `logs/` directory; individual log files are created automatically.
+- Optional: a writable `queue/` directory and a cron job, when `ENABLE_QUEUE` is on.
 - No Composer, database, Redis, cURL, or framework is required.
 
 ## Architecture & Workflow
@@ -143,6 +144,10 @@ All constants are defined in [`example.env.php`](./example.env.php).
 | `CORS_ALLOW_HEADERS` | `Content-Type, Authorization` | Allowed request headers |
 | `SALT_SHA256` | `YOUR_KEY_HERE` | Salt used by `Security::sha256()` |
 | `TRUSTED_PROXIES` | `[]` | Replaces the default Cloudflare CIDRs |
+| `ENABLE_QUEUE` | `false` | Queues Discord notifications and reports for the cron flush |
+| `QUEUE_DIR` | `__DIR__."/queue/"` | Queue directory |
+| `DISCORD_MAX_PER_FLUSH` | `5` | Discord messages sent by one flush (10 embeds each) |
+| `REPORTS_MAX_PER_FLUSH` | `50` | Reports sent to AbuseIPDB by one flush |
 
 Keep `ENVIRONMENT` different from `dev` in production and configure a
 specific CORS origin. The default `*` origin is intended only for development.
@@ -186,6 +191,10 @@ Required fields are `action` (`report`), `ip`, `categories` (array), and
 `comment` (string). `timestamp` is optional and must be ISO 8601 when supplied.
 If omitted, the server's current ISO 8601 time is used. Reports are not cached.
 
+With `ENABLE_QUEUE` on, a valid report is not sent during the request: it is
+queued and the API answers `202` with the message `queued`. The cron flush
+sends it later (see [Queue and cron](#queue-and-cron)).
+
 ### Response envelope
 
 ```json
@@ -217,6 +226,27 @@ lookups and trigger a gray `TTL Reached` Discord notification. New entries
 trigger a green `New IP added to cache` notification. Every cache rewrite runs
 under an exclusive `flock()`, so concurrent requests do not lose entries.
 
+### Queue and cron
+
+With `ENABLE_QUEUE` on, Discord notifications and reports are written to JSON
+files in `QUEUE_DIR` instead of being sent during the request, so a slow
+Discord or AbuseIPDB never delays the API. The command line script
+[`src/cron/flush.php`](./src/cron/flush.php) sends them in bulk; schedule it
+with cron, for example every 10 minutes:
+
+```bash
+*/10 * * * * php /var/www/php-abuseipdb/src/cron/flush.php
+```
+
+- notifications are grouped by event ("12 failed authentications from 3 IPs",
+  "5 IPs added to the cache") and sent with up to 10 embeds per message;
+- reports on the same IP are merged while queued (AbuseIPDB accepts an IP once
+  every 15 minutes) and sent one `/report` per IP. Network errors, 5xx and 429
+  stay queued for the next run, other 4xx are discarded; a summary is sent to
+  Discord.
+
+With `ENABLE_QUEUE` off, everything is sent immediately, as in 1.1.
+
 ### Logging
 
 The logger writes rows to `<LOGS_DIR>/<category>.log` using
@@ -236,10 +266,12 @@ trusted proxy list. Invalid or missing `REMOTE_ADDR` falls back to
 - [API reference](./docs/src/api/abuseipdb.md)
 - [Deployment guide](./docs/DEPLOYMENT.md)
 - [Cache](./docs/src/includes/cache.md)
+- [Cron flush](./docs/src/includes/flusher.md)
 - [Endpoint base class](./docs/src/includes/endpoint.md)
 - [Enums](./docs/src/includes/enums.md)
 - [Include aggregator](./docs/src/includes/index.md)
 - [Logger](./docs/src/includes/logger.md)
+- [Queue](./docs/src/includes/queue.md)
 - [Reports summary](./docs/src/includes/report_summary.md)
 - [Security helpers](./docs/src/includes/security.md)
 - [Discord webhook](./docs/src/includes/webhook.md)
@@ -247,7 +279,8 @@ trusted proxy list. Invalid or missing `REMOTE_ADDR` falls back to
 ## Limitations
 
 - No application-level rate limiting.
-- No automatic upstream retry.
+- Synchronous reports (`ENABLE_QUEUE` off) are not retried; queued reports are
+  retried by the next flush after temporary failures.
 - `env.php` is loaded from the repository root; moving it outside the webroot
   is planned but not implemented.
 

@@ -9,8 +9,10 @@ include files in this order:
 4. `security.php`
 5. `cache.php`
 6. `report_summary.php`
-7. `endpoint.php`
-8. `webhook.php`
+7. `queue.php`
+8. `flusher.php`
+9. `endpoint.php`
+10. `webhook.php`
 
 Use it from an endpoint with:
 

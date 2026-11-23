@@ -27,6 +27,6 @@ jobs:
     - name: Run smoke tests
       run: php tools/phpunit-10.phar --testsuite smoke
 
-    # starts PHP built-in servers on ports 17490 and 17495-17499
+    # starts PHP built-in servers on ports 17490 and 17495-17504
     - name: Run findings tests
       run: php tools/phpunit-10.phar --testsuite findings

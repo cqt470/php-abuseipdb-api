@@ -6,3 +6,4 @@ logs/*
 .phpunit.cache/
 tests/tmp/
 tests/Unit/fixtures/last_request.log
+queue/

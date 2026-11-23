@@ -18,6 +18,14 @@
 
     $logger = new Logger(\LOGS_DIR);
 
+    foreach(["QUEUE_DIR", "DISCORD_MAX_PER_FLUSH", "REPORTS_MAX_PER_FLUSH"] as $constant){
+        if(!defined($constant)){
+            fwrite(STDERR, "$constant is not defined in env.php, see example.env.php.
+");
+            exit(1);
+        }
+    }
+
     $dir = rtrim(\QUEUE_DIR, "/\\");
     if(!is_dir($dir)){
         $logger->log("queue", log_priority::error, "Flush skipped: the queue folder doesn't exist ($dir).");
