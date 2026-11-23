@@ -2,13 +2,13 @@
 
 ![PHP Version](https://img.shields.io/badge/PHP-%3E%3D8.1-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Release](https://img.shields.io/badge/release-v1.0.2-green)
+![Release](https://img.shields.io/badge/release-v1.0.3-green)
 
 A self-hosted, zero-dependency PHP proxy for the AbuseIPDB API. The proxy
 keeps the official AbuseIPDB key server-side and exposes one authenticated
 endpoint for IP checks and reports.
 
-> This document describes the 1.0.2 release. The source of truth for
+> This document describes the 1.0.3 release. The source of truth for
 > behavior is the code in [`src/`](./src/).
 
 ## Requirements
@@ -239,7 +239,6 @@ trusted proxy list. Invalid or missing `REMOTE_ADDR` falls back to
 - No application-level rate limiting.
 - No automatic upstream retry.
 - Cache writes are not locked.
-- Webhook exceptions are not caught by current cache callers.
 - `env.php` is loaded from the repository root; moving it outside the webroot
   is planned but not implemented.
 

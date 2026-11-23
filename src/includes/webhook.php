@@ -10,15 +10,37 @@
     class Webhook{
         /**
          * Sends an embed to the configured Discord webhook.
+         * Notifications are best-effort: failures are logged and never interrupt the API request.
          *
          * @param array{title?: string|null, description?: string|null, color?: int|string|null, timestamp?: string|null} $embed_data
-         * @return void
+         * @return bool true if Discord accepted the message
          */
-        public static function use_discord(array $embed_data = []): void{
+        public static function use_discord(array $embed_data = []): bool{
             if(!\ENABLE_DISCORD_WEBHOOK){
-                return;
+                return false;
             }
 
+            try{
+                self::send($embed_data);
+                return true;
+            }catch(\Throwable $e){
+                self::report_failure($e);
+                return false;
+            }
+        }
+
+        private static function report_failure(\Throwable $e): void{
+            $message = "Discord webhook failed: ".$e->getMessage();
+            error_log($message);
+
+            try{
+                (new Logger(\LOGS_DIR))->log("webhook", log_priority::error, $message);
+            }catch(\Throwable){
+                // logging is best-effort too
+            }
+        }
+
+        private static function send(array $embed_data): void{
             $payload = [
                 "username" => \WEBHOOK_USERNAME,
                 "embeds" => [
@@ -36,7 +58,7 @@
                     "method" => "POST",
                     "header" => "Content-Type: application/json\r\n",
                     "content" => json_encode($payload, JSON_THROW_ON_ERROR),
-                    "timeout" => 10,
+                    "timeout" => 5,
                     "ignore_errors" => true
                 ]
             ];
@@ -47,7 +69,7 @@
                 throw new Exception("Set a Discord webhook URL.");
             }
 
-            $response = file_get_contents(\URL_DISCORD_WEBHOOK, false, $context);
+            $response = @file_get_contents(\URL_DISCORD_WEBHOOK, false, $context);
 
             if($response === false){
                 throw new Exception("Didn't get a response from Discord");
