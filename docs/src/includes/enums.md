@@ -19,7 +19,7 @@ The enum is used by [`Logger`](./logger.md). PHP 8.1 or newer is required.
 
 ## `abuse_category`
 
-Backed int enum `Zexa\Includesbuse_category` with the
+Backed int enum `Zexa\Includes\abuse_category` with the
 [AbuseIPDB report categories](https://www.abuseipdb.com/categories). `label()`
 returns the name shown on abuseipdb.com; `from_input(mixed $id)` returns the
 category for a known integer id and `null` for anything else (used to validate

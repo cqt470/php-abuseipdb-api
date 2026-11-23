@@ -34,7 +34,13 @@ the form AbuseIPDB returns) before the cache lookup, so different spellings of
 the same IPv6 address share one cache entry.
 
 Cache hits and live responses have the same shape, `{"data": {...}}`; the
-internal `added_at` field is not exposed.
+internal `added_at` field is not exposed. A cache hit costs one read of the
+cache file (`Cache::find_entry()`).
+
+The raw `reports` list of a live answer is replaced by `reportsSummary` (see
+[`ReportSummary`](./report_summary.md)) before it is cached and returned.
+Cache entries written by older versions, which still contain `reports`, are
+summarized when read.
 
 `sha256()` hashes the input concatenated with `SALT_SHA256`, or with the
 explicit salt supplied by the caller.

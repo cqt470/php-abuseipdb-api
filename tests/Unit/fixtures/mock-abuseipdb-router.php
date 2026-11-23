@@ -10,6 +10,24 @@
 
     $ip = $_GET['ipAddress'] ?? '';
 
+    /** A few reports shaped like the verbose AbuseIPDB answer. */
+    function fake_reports(): array {
+        $report = fn(int $ago, array $categories, int $reporter, string $country) => [
+            'reportedAt'          => gmdate('Y-m-d\TH:i:sP', time() - $ago),
+            'comment'             => 'test report',
+            'categories'          => $categories,
+            'reporterId'          => $reporter,
+            'reporterCountryCode' => $country,
+            'reporterCountryName' => $country,
+        ];
+
+        return [
+            $report(3600, [18, 22], 1, 'DE'),
+            $report(3 * 86400, [22], 2, 'US'),
+            $report(40 * 86400, [14], 1, 'DE'),
+        ];
+    }
+
     // Log the raw request URI so the "API key not in URL" regression test can inspect it.
     file_put_contents(__DIR__ . '/last_request.log', $_SERVER['REQUEST_URI'] . PHP_EOL);
 
@@ -36,6 +54,7 @@
                     'ipAddress'            => $ip,
                     'abuseConfidenceScore' => 0,
                     'countryCode'          => 'ZZ',
+                    'reports'              => fake_reports(),
                 ],
             ]);
     }

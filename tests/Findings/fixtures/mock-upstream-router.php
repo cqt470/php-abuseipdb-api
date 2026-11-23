@@ -27,6 +27,10 @@
             'isPublic'             => true,
             'abuseConfidenceScore' => 0,
             'countryCode'          => 'ZZ',
+            'reports'              => [
+                ['reportedAt' => gmdate('Y-m-d\TH:i:sP', time() - 600), 'comment' => 'ssh', 'categories' => [18, 22],
+                 'reporterId' => 7, 'reporterCountryCode' => 'DE', 'reporterCountryName' => 'Germany'],
+            ],
         ]]);
         return;
     }

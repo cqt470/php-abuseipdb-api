@@ -112,6 +112,21 @@
             );
         }
 
+        /** The raw reports list is replaced by reportsSummary, live and from cache alike. */
+        public function test_check_returns_reports_summary_instead_of_reports(): void
+        {
+            $first  = self::call(self::NORMAL, ['action' => 'check', 'ip' => '198.51.100.31']);
+            $second = self::call(self::NORMAL, ['action' => 'check', 'ip' => '198.51.100.31']);
+
+            foreach ([$first, $second] as $r) {
+                $data = $r['json']['parameters']['info']['data'] ?? [];
+                $this->assertArrayNotHasKey('reports', $data, self::describe($r));
+                // the mock report has categories 18 and 22: same count, lower id first
+                $this->assertSame('Brute-Force', $data['reportsSummary']['categories'][0]['name'] ?? null, self::describe($r));
+            }
+            $this->assertSame($first['json']['parameters']['info'], $second['json']['parameters']['info']);
+        }
+
         /** IPv6 written in non-canonical form must be served from cache the second time. */
         public function test_non_canonical_ipv6_hits_the_cache(): void
         {

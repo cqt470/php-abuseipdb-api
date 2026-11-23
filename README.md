@@ -2,13 +2,13 @@
 
 ![PHP Version](https://img.shields.io/badge/PHP-%3E%3D8.1-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Release](https://img.shields.io/badge/release-v1.1.3-green)
+![Release](https://img.shields.io/badge/release-v1.1.4-green)
 
 A self-hosted, zero-dependency PHP proxy for the AbuseIPDB API. The proxy
 keeps the official AbuseIPDB key server-side and exposes one authenticated
 endpoint for IP checks and reports.
 
-> This document describes the 1.1.3 release. The source of truth for
+> This document describes the 1.1.4 release. The source of truth for
 > behavior is the code in [`src/`](./src/).
 
 ## Requirements
@@ -168,6 +168,11 @@ curl -X POST http://localhost:8000/api/abuseipdb.php \
 Required fields are `action` (`check`) and `ip` (IPv4 or IPv6). The response
 contains the decoded AbuseIPDB check result under `parameters.info`.
 
+**Breaking change in 1.2.0:** the raw `reports` list is no longer returned.
+It is replaced by `reportsSummary`, a ~1 KB summary of the reports (categories
+by frequency, timeline, top reporter countries, distinct reporters). See the
+[API reference](./docs/src/api/abuseipdb.md#check) for the full structure.
+
 ### Report an IP
 
 ```bash
@@ -206,7 +211,8 @@ The complete request and error reference is
 ### Cache
 
 Checks use `cache/ips.json` when `ENABLE_CACHING` is enabled. Entries contain
-the upstream `data` fields plus `added_at`. Expired entries are removed during
+the upstream `data` fields (with `reportsSummary` instead of `reports`) plus
+`added_at`. Expired entries are removed during
 lookups and trigger a gray `TTL Reached` Discord notification. New entries
 trigger a green `New IP added to cache` notification. Every cache rewrite runs
 under an exclusive `flock()`, so concurrent requests do not lose entries.
@@ -234,6 +240,7 @@ trusted proxy list. Invalid or missing `REMOTE_ADDR` falls back to
 - [Enums](./docs/src/includes/enums.md)
 - [Include aggregator](./docs/src/includes/index.md)
 - [Logger](./docs/src/includes/logger.md)
+- [Reports summary](./docs/src/includes/report_summary.md)
 - [Security helpers](./docs/src/includes/security.md)
 - [Discord webhook](./docs/src/includes/webhook.md)
 

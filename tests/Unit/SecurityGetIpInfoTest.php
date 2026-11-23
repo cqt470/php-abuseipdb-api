@@ -117,6 +117,43 @@
             );
         }
 
+        public function test_live_response_carries_reports_summary_not_reports(): void
+        {
+            $info = Security::get_ip_info(self::IP_OK, true);
+
+            $this->assertArrayNotHasKey('reports', $info['data']);
+            $this->assertSame(3, $info['data']['reportsSummary']['sampleSize']);
+            $this->assertSame(22, $info['data']['reportsSummary']['topCategory']['id']);
+
+            $cached = $this->readCache()[0];
+            $this->assertArrayNotHasKey('reports', $cached, 'the raw reports list must not be cached');
+            $this->assertArrayHasKey('reportsSummary', $cached);
+        }
+
+        public function test_cache_hit_is_identical_to_live_response(): void
+        {
+            $live = Security::get_ip_info(self::IP_OK, true);
+            $hit  = Security::get_ip_info(self::IP_OK);
+
+            $this->assertSame($live, $hit);
+        }
+
+        /** Entries cached before 1.2 still have "reports": they are summarized when read. */
+        public function test_old_cache_entry_with_reports_is_summarized_on_read(): void
+        {
+            file_put_contents(\CACHE_FILE, json_encode([[
+                'ipAddress' => '198.51.100.90',
+                'abuseConfidenceScore' => 50,
+                'reports' => [['reportedAt' => date('c'), 'categories' => [18], 'reporterId' => 1, 'reporterCountryCode' => 'DE']],
+                'added_at' => time(),
+            ]]));
+
+            $info = Security::get_ip_info('198.51.100.90');
+
+            $this->assertArrayNotHasKey('reports', $info['data']);
+            $this->assertSame('Brute-Force', $info['data']['reportsSummary']['topCategory']['name']);
+        }
+
         public function test_api_key_not_in_request_url(): void
         {
             Security::get_ip_info(self::IP_OK, true);

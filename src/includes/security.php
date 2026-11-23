@@ -151,6 +151,8 @@
 
                 // same shape as a live AbuseIPDB response: {"data": {...}}
                 unset($entry["added_at"]);
+                // entries cached before 1.2 still carry the raw "reports" list
+                $entry = ReportSummary::apply($entry);
                 return ["data" => $entry];
             }
 
@@ -173,6 +175,8 @@
             if(isset($http_response_header) && preg_match("{HTTP\/\S*\s(\d{3})}", $http_response_header[0], $matches)) $http_code = (int)$matches[1];
             switch($http_code){
                 case "200":
+                    // the raw reports list is replaced by its summary, both in the response and in the cache
+                    if(is_array($data["data"] ?? null)) $data["data"] = ReportSummary::apply($data["data"]);
                     $cache->add_entry($data); // Cache logs the insertion itself
                     return $data;
                 default:

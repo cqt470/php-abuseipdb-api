@@ -4,5 +4,6 @@
     include_once __DIR__."/logger.php";
     include_once __DIR__."/security.php";
     include_once __DIR__."/cache.php";
+    include_once __DIR__."/report_summary.php";
     include_once __DIR__."/endpoint.php";
     include_once __DIR__."/webhook.php";

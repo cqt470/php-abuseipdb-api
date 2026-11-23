@@ -8,8 +8,9 @@ include files in this order:
 3. `logger.php`
 4. `security.php`
 5. `cache.php`
-6. `endpoint.php`
-7. `webhook.php`
+6. `report_summary.php`
+7. `endpoint.php`
+8. `webhook.php`
 
 Use it from an endpoint with:
 

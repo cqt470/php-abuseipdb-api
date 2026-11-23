@@ -31,6 +31,37 @@ returned in `parameters.info` as `{"data": {...}}` and may be stored in
 `cache/ips.json` when `ENABLE_CACHING` is enabled. Cached answers use the same
 shape as live ones.
 
+> **Breaking change in 1.2.0:** the raw `reports` list of the verbose AbuseIPDB
+> answer (up to 100 reports, ~27 KB per IP) is no longer returned. It is
+> replaced by `reportsSummary` (~1 KB), both in live answers and in the cache.
+> Entries cached by older versions are summarized when read.
+
+```json
+"reportsSummary": {
+  "sampleSize": 100,
+  "categories": [
+    { "id": 22, "name": "SSH",         "count": 91, "percent": 91 },
+    { "id": 18, "name": "Brute-Force", "count": 74, "percent": 74 }
+  ],
+  "topCategory": { "id": 22, "name": "SSH", "percent": 91 },
+  "timeline": { "last24h": 38, "last7d": 100, "last30d": 100, "oldest": "2026-11-19T22:03:11+00:00", "newest": "2026-11-23T07:41:02+00:00" },
+  "topReporterCountries": [ { "code": "DE", "count": 27 }, { "code": "US", "count": 21 } ],
+  "distinctReporters": 64
+}
+```
+
+| Field | Description |
+| --- | --- |
+| `sampleSize` | Number of reports AbuseIPDB returned (at most 100, the most recent) |
+| `categories` | Every category found, most frequent first; `percent` is the share of reports containing it, so the values can add up to more than 100 |
+| `topCategory` | The first item of `categories`, or `null` without reports |
+| `timeline` | Reports in the last 24 hours / 7 days / 30 days, and the oldest and newest report time (UTC) |
+| `topReporterCountries` | The 5 countries with most reports |
+| `distinctReporters` | Number of different reporters |
+
+The timeline is computed when the answer is fetched from AbuseIPDB: a cached
+answer keeps the counts of that moment (at most `CACHE_TTL` old).
+
 ```bash
 curl -X POST http://localhost:8000/api/abuseipdb.php \
   -H "Content-Type: application/json" \
