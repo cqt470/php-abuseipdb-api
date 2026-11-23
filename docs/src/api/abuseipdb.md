@@ -46,7 +46,7 @@ Required fields:
 | --- | --- | --- |
 | `action` | string | `report` |
 | `ip` | string | IPv4 or IPv6 address |
-| `categories` | array | AbuseIPDB category values |
+| `categories` | array | AbuseIPDB category ids (integers 1-23, at least one) |
 | `comment` | string | Report explanation |
 
 Optional fields:
@@ -55,7 +55,7 @@ Optional fields:
 | --- | --- | --- |
 | `timestamp` | string | Current server time in ISO 8601 format |
 
-The categories array is joined with commas and sent to AbuseIPDB's
+Duplicate categories are removed and the array is joined with commas and sent to AbuseIPDB's
 `/report` endpoint. Reports are not cached.
 
 ```bash
@@ -94,6 +94,8 @@ AbuseIPDB.
 | 400 | `The required field "<name>" is missing.` | Missing required action field |
 | 400 | `"<name>" should be of datatype "<type>", "<actual>" received.` | Wrong JSON type |
 | 400 | `The IP doesn't seem to be valid.` | Invalid IP address |
+| 400 | `Specify at least one category.` | Empty `categories` |
+| 400 | `Categories must be integers between 1 and 23.` | Unknown or non-integer category |
 | 400 | `Invalid timestamp string (must be ISO 8601).` | Invalid report timestamp |
 | 401 | `Unauthenticated.` | Missing token |
 | 403 | `Unauthorized.` | Token rejected outside development |

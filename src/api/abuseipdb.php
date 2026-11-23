@@ -67,7 +67,15 @@
             $timestamp = $parameters["timestamp"] ?? date("c");
 
             if(!Security::validate_ip($ip)) $this->send_error("The IP doesn't seem to be valid.");
-            $ip = $ip; $categories = implode(",", $categories); $comment = $comment; $timestamp = $timestamp;
+
+            // AbuseIPDB category ids: https://www.abuseipdb.com/categories
+            if($categories === []) $this->send_error("Specify at least one category.");
+            foreach($categories as $category){
+                if(!is_int($category) || $category < 1 || $category > 23){
+                    $this->send_error("Categories must be integers between 1 and 23.");
+                }
+            }
+            $categories = implode(",", array_unique($categories));
 
             try{
                 $test_timestamp = new DateTime($timestamp);
