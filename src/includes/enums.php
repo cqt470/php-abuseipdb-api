@@ -77,3 +77,16 @@
             return is_int($id) ? self::tryFrom($id) : null;
         }
     }
+
+
+    /**
+     * Kind of a Discord notification. When notifications are queued,
+     * the cron flush groups them by event (e.g. "12 failed authentications from 3 IPs").
+     */
+    enum discord_event: string{
+        case failed_auth = "failed_auth";
+        case cache_added = "cache_added";
+        case cache_expired = "cache_expired";
+        case report_result = "report_result";
+        case generic = "generic";
+    }

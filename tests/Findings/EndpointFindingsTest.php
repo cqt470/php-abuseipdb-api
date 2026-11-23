@@ -18,6 +18,7 @@
         private const WEBHOOK     = 17497; // Discord enabled but unreachable
         private const PLACEHOLDER = 17498; // API_KEY_CUSTOM left as "YOUR_KEY_HERE"
         private const DEAD_UP     = 17499; // AbuseIPDB unreachable
+        private const QUEUED      = 17500; // ENABLE_QUEUE on, Discord enabled but unreachable
 
         private const KEY = 'test-custom-key-0000000000000000';
 
@@ -47,10 +48,13 @@
                 self::WEBHOOK     => ['FINDINGS_BASE_URL' => $up, 'FINDINGS_WEBHOOK' => '1'],
                 self::PLACEHOLDER => ['FINDINGS_BASE_URL' => $up, 'FINDINGS_CUSTOM_KEY' => 'YOUR_KEY_HERE'],
                 self::DEAD_UP     => ['FINDINGS_BASE_URL' => 'http://127.0.0.1:1'],
+                self::QUEUED      => ['FINDINGS_BASE_URL' => $up, 'FINDINGS_WEBHOOK' => '1', 'FINDINGS_QUEUE' => '1'],
             ];
             foreach ($configs as $port => $env) {
                 $dir = "$tmp/$port";
                 if (!is_dir("$dir/logs")) mkdir("$dir/logs", 0777, true);
+                if (!is_dir("$dir/queue")) mkdir("$dir/queue", 0777, true);
+                foreach (glob("$dir/queue/*") ?: [] as $f) unlink($f);
                 file_put_contents("$dir/ips.json", '[]');
                 ServerHelper::start($port, __DIR__.'/fixtures/endpoint-router.php', $env + ['FINDINGS_TMP' => $dir]);
             }
@@ -206,6 +210,23 @@
         {
             $r = self::call(self::WEBHOOK, ['action' => 'check', 'ip' => '198.51.100.61']);
             $this->assertSame(200, $r['status'], self::describe($r));
+        }
+
+        /** With the queue on, Discord notifications are queued with their event instead of being sent. */
+        public function test_notifications_are_queued_when_the_queue_is_enabled(): void
+        {
+            $denied = self::call(self::QUEUED, ['action' => 'check', 'ip' => '198.51.100.62'], 'wrong');
+            $ok     = self::call(self::QUEUED, ['action' => 'check', 'ip' => '198.51.100.63']);
+            $this->assertSame(403, $denied['status'], self::describe($denied));
+            $this->assertSame(200, $ok['status'], self::describe($ok));
+
+            $file = ServerHelper::tmp().'/'.self::QUEUED.'/queue/discord.json';
+            $queued = json_decode((string)@file_get_contents($file), true) ?? [];
+            $events = array_column($queued, 'event');
+
+            $this->assertContains('failed_auth', $events, (string)@file_get_contents($file));
+            $this->assertContains('cache_added', $events, (string)@file_get_contents($file));
+            $this->assertSame('198.51.100.63', $queued[array_search('cache_added', $events, true)]['context']['ip']);
         }
 
         /** The example placeholder key must never authenticate anybody. */

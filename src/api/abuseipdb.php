@@ -4,6 +4,7 @@
     include_once __DIR__."/../includes/index.php";
 
     use Zexa\Includes\abuse_category;
+    use Zexa\Includes\discord_event;
     use Zexa\Includes\Endpoint;
     use Zexa\Includes\log_priority;
     use Zexa\Includes\Security;
@@ -33,7 +34,7 @@
                     "title" => "Failed authentication",
                     "description" => "IP `$ip` failed to authenticate himself at endpoint /abuseipdb via token, its hash is: `$hash`.",
                     "color" => "#ff0000"
-                ]);
+                ], discord_event::failed_auth, ["ip" => $ip]);
 
                 $this->send_error("Unauthorized.", 403);
             }

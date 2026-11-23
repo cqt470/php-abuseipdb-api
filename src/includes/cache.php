@@ -129,7 +129,7 @@
                 "description" => "The ip `$address` was added to the cache",
                 "color" => "#2ecc71",
                 "timestamp" => date("c")
-            ]);
+            ], discord_event::cache_added, ["ip" => $address]);
         }
 
         /**
@@ -195,7 +195,7 @@
                     "title" => "TTL Reached",
                     "description" => "The IP Address `$value` has expired and has been deleted from cache",
                     "color" => "#444444"
-                ]);
+                ], discord_event::cache_expired, ["ip" => $value]);
             }
         }
 
