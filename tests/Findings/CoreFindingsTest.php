@@ -92,6 +92,14 @@
             $this->assertFalse((new Cache(\CACHE_FILE))->check_for_entry('ipAddress', '198.51.100.10'));
         }
 
+        /** An entry without "added_at" is treated as expired and evicted. */
+        public function test_entry_without_added_at_is_evicted(): void
+        {
+            file_put_contents(\CACHE_FILE, json_encode([['ipAddress' => '198.51.100.9'], 'garbage']));
+            $this->assertFalse((new Cache(\CACHE_FILE))->check_for_entry('ipAddress', '198.51.100.9'));
+            $this->assertStringNotContainsString('198.51.100.9', file_get_contents(\CACHE_FILE));
+        }
+
         /** A corrupted cache file must not be silently overwritten (all cached data lost). */
         public function test_corrupted_cache_is_not_silently_wiped(): void
         {

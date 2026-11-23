@@ -31,7 +31,11 @@
         public function check_for_entry(string $key, string $value): bool{
             $data = json_decode(file_get_contents($this->filepath), true) ?? [];
             foreach($data as $ip){
-                if($ip["added_at"] < (time() - \CACHE_TTL)){
+                // malformed entry (hand-edited or old format): ignore it
+                if(!is_array($ip) || !isset($ip[$key])) continue;
+
+                // a missing added_at counts as expired
+                if(!is_int($ip["added_at"] ?? null) || $ip["added_at"] < (time() - \CACHE_TTL)){
                     // evict the stale entry itself, not the one being searched for
                     $this->delete_entry($key, $ip[$key]);
 
@@ -96,7 +100,7 @@
         public function get_entry(string $key, string $value): ?array{
             $data = json_decode(file_get_contents($this->filepath), true) ?? [];
             foreach($data as $ip){
-                if($ip[$key] == $value) return $ip;
+                if(is_array($ip) && ($ip[$key] ?? null) == $value) return $ip;
             }
 
             return null;
@@ -114,7 +118,7 @@
             $data = json_decode(file_get_contents($this->filepath), true) ?? [];
 
             foreach($data as $ip){
-                if($ip[$key] == $value) continue;
+                if(is_array($ip) && ($ip[$key] ?? null) == $value) continue;
                 $new[] = $ip; // re-index: keeps the file a JSON list, not an object
             }
 
