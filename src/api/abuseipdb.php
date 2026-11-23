@@ -100,7 +100,7 @@
             $context = stream_context_create([
                 "http" => [
                     "method" => "POST",
-                    "header" => "Key: $key\r\nAccept: application/json\r\n",
+                    "header" => "Key: $key\r\nAccept: application/json\r\nContent-Type: application/x-www-form-urlencoded\r\n",
                     "content" => $body,
                     "ignore_errors" => true, // reads errors on 4xx and 5xx
                     "timeout" => 16,
