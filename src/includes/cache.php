@@ -61,25 +61,25 @@
             // malformed payload, likely due to a 4xx or 5xx response
             if(!isset($ip["data"]["ipAddress"])) return;
 
-            $data = json_decode(file_get_contents($this->filepath), true) ?? [];
-
-            // cache hit
-            if($this->check_for_entry("ipAddress", $ip["data"]["ipAddress"])){
-                // todo: capire perché non logga se il logger è usato in Cache
-                // $this->logger->log("cache", log_priority::info, "IP cache hit (".$ip["data"]["ipAddress"].").");
-                echo "ok";
-                return;
-            };
             $address = $ip["data"]["ipAddress"];
 
-            $this->logger->log("cache", log_priority::info, "IP added to cache ($address).");
-            $webhook = new Webhook();
-            $webhook::use_discord([
-                "title" => "New IP added to cache",
-                "description" => "The ip `$address` was added to the cache",
-                "color" => "#2ecc71",
-                "timestamp" => date("c")
-            ]);
+            // already cached: replace the old entry with the fresh data
+            $refresh = $this->check_for_entry("ipAddress", $address);
+            if($refresh) $this->delete_entry("ipAddress", $address);
+
+            $data = json_decode(file_get_contents($this->filepath), true) ?? [];
+
+            if($refresh){
+                $this->logger->log("cache", log_priority::info, "IP refreshed in cache ($address).");
+            }else{
+                $this->logger->log("cache", log_priority::info, "IP added to cache ($address).");
+                Webhook::use_discord([
+                    "title" => "New IP added to cache",
+                    "description" => "The ip `$address` was added to the cache",
+                    "color" => "#2ecc71",
+                    "timestamp" => date("c")
+                ]);
+            }
 
             $ip["data"]["added_at"] = time();
             $data[] = $ip["data"];

@@ -19,9 +19,10 @@ older than `time() - CACHE_TTL` are deleted and produce a `TTL Reached`
 Discord notification. The scan continues after eviction, so later valid
 entries are still considered.
 
-`add_entry()` ignores payloads without `data.ipAddress`, avoids duplicate
-addresses, adds `added_at` to the upstream `data` object, and rewrites the
-cache file. A new entry produces a green `New IP added to cache` notification.
+`add_entry()` ignores payloads without `data.ipAddress`, replaces an existing
+entry for the same address (refresh), adds `added_at` to the upstream `data`
+object, and rewrites the cache file. A new entry produces a green `New IP added
+to cache` notification; a refresh does not.
 
 `get_entry()` returns the first matching entry or `null`. `delete_entry()`
 rewrites the file without matching entries.

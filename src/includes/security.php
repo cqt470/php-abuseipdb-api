@@ -129,7 +129,7 @@
 
             $caching = \ENABLE_CACHING;
             if(!$ip) $ip = Security::get_ip();
-            if($cache->check_for_entry("ipAddress", $ip) && !$skip_cache && $caching){
+            if($caching && !$skip_cache && $cache->check_for_entry("ipAddress", $ip)){
                 self::logger()->log("cache", log_priority::info, "IP cache hit: $ip");
 
                 // same shape as a live AbuseIPDB response: {"data": {...}}
