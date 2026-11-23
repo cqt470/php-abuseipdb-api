@@ -39,10 +39,11 @@
                     // evict the stale entry itself, not the one being searched for
                     $this->delete_entry($key, $ip[$key]);
 
-                    // $this->logger->log("cache", log_priority::info, "IP expired ($value).");
+                    $expired = $ip[$key];
+                    $this->logger->log("cache", log_priority::info, "IP expired ($expired).");
                     Webhook::use_discord([
                         "title" => "TTL Reached",
-                        "description" => "The IP Address `$value` has expired and has been deleted from cache",
+                        "description" => "The IP Address `$expired` has expired and has been deleted from cache",
                         "color" => "#444444"
                     ]);
 
