@@ -130,6 +130,42 @@
             $this->assertCount($writers * $per, $data, 'entries lost by concurrent writers');
         }
 
+        /** A plain lookup must not need the exclusive lock: readers must not queue behind each other. */
+        public function test_check_for_entry_does_not_wait_for_other_readers(): void
+        {
+            $file = ServerHelper::tmp().'/shared-lock.json';
+            file_put_contents($file, json_encode([['ipAddress' => '198.51.100.80', 'added_at' => time()]]));
+
+            // another reader holds a shared lock for the whole test
+            $held = fopen($file, 'r');
+            flock($held, LOCK_SH);
+
+            $proc = proc_open(
+                [PHP_BINARY, __DIR__.'/fixtures/cache-reader.php', $file, '198.51.100.80'],
+                [1 => ['pipe', 'w'], 2 => ['file', ServerHelper::tmp().'/reader.log', 'a']],
+                $pipes
+            );
+            stream_set_blocking($pipes[1], false);
+
+            $deadline = microtime(true) + 5.0;
+            while (microtime(true) < $deadline && proc_get_status($proc)['running']) {
+                usleep(50_000);
+            }
+            $finished = !proc_get_status($proc)['running'];
+
+            // terminate before reading: on Windows pipes ignore non-blocking mode,
+            // so reading from a still running child would block until it exits
+            if (!$finished) proc_terminate($proc);
+            $output = $finished ? (string) stream_get_contents($pipes[1]) : '';
+            fclose($pipes[1]);
+            proc_close($proc);
+            flock($held, LOCK_UN);
+            fclose($held);
+
+            $this->assertTrue($finished, 'check_for_entry blocked while another process held a shared lock');
+            $this->assertSame('1', $output);
+        }
+
         /** Logger must work where REQUEST_METHOD is not set (CLI, cron, workers). */
         public function test_logger_works_without_request_method(): void
         {

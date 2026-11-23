@@ -24,6 +24,9 @@
          * Does a key identifier with a specified value exist in the cache?
          * Expired entries found during the scan are evicted.
          *
+         * The scan runs under a shared lock, so concurrent checks never wait for
+         * each other; the exclusive lock is taken only when something must be evicted.
+         *
          * @param string $key the key
          * @param string $value the value
          * @todo add more $value datatypes
@@ -33,6 +36,18 @@
             $found = false;
             $expired = [];
 
+            $data = $this->read();
+            if($data === null) return false; // corrupted file, already logged by decode()
+
+            [$keep, $stale] = $this->split_expired($data, $key);
+            if(!$stale){
+                foreach($keep as $ip){
+                    if(is_array($ip) && ($ip[$key] ?? null) == $value) return true;
+                }
+                return false;
+            }
+
+            // something expired: redo the scan under the exclusive lock, the file may have changed meanwhile
             $this->transaction(function(array $data) use ($key, $value, &$found, &$expired): ?array{
                 [$keep, $expired] = $this->split_expired($data, $key);
                 foreach($keep as $ip){
