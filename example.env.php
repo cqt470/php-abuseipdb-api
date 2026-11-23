@@ -25,8 +25,9 @@ define("API_KEY_ABUSEIPDB", "YOUR_KEY_HERE");
 // Generate a strong value with: openssl rand -hex 64
 define("API_KEY_CUSTOM", "YOUR_KEY_HERE");
 
-// Use "dev" only for local development. Any other value enables token checks.
-define("ENVIRONMENT", "dev");
+// Use "dev" only for local development: it disables token checks entirely.
+// Any other value enables them.
+define("ENVIRONMENT", "production");
 
 // AbuseIPDB API v2 base URL.
 define("ABUSEIPDB_BASE_URL", "https://api.abuseipdb.com/api/v2");

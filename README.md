@@ -2,13 +2,13 @@
 
 ![PHP Version](https://img.shields.io/badge/PHP-%3E%3D8.1-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
-![Release](https://img.shields.io/badge/release-v1.0.16-green)
+![Release](https://img.shields.io/badge/release-v1.0.17-green)
 
 A self-hosted, zero-dependency PHP proxy for the AbuseIPDB API. The proxy
 keeps the official AbuseIPDB key server-side and exposes one authenticated
 endpoint for IP checks and reports.
 
-> This document describes the 1.0.16 release. The source of truth for
+> This document describes the 1.0.17 release. The source of truth for
 > behavior is the code in [`src/`](./src/).
 
 ## Requirements
@@ -110,7 +110,7 @@ printf '[]' > cache/ips.json
 Edit `env.php` before exposing the API. It is PHP code containing constants,
 not a dotenv file, and must never be committed.
 
-For local development:
+For local development (with `ENVIRONMENT` set to `dev` in `env.php`):
 
 ```bash
 # Start PHP's development server with src/ as its document root.
@@ -130,7 +130,7 @@ All constants are defined in [`example.env.php`](./example.env.php).
 | --- | --- | --- |
 | `API_KEY_ABUSEIPDB` | `YOUR_KEY_HERE` | Official key sent to AbuseIPDB |
 | `API_KEY_CUSTOM` | `YOUR_KEY_HERE` | Token accepted by this proxy |
-| `ENVIRONMENT` | `dev` | Skips token comparison only when exactly `dev` |
+| `ENVIRONMENT` | `production` | Skips token comparison only when exactly `dev` |
 | `ENABLE_CACHING` | `true` | Enables cache reads for checks |
 | `CACHE_TTL` | `60*60*12` | Cache lifetime in seconds |
 | `CACHE_FILE` | `__DIR__."/cache/ips.json"` | Cache file path |
@@ -144,8 +144,11 @@ All constants are defined in [`example.env.php`](./example.env.php).
 | `SALT_SHA256` | `YOUR_KEY_HERE` | Salt used by `Security::sha256()` |
 | `TRUSTED_PROXIES` | `[]` | Replaces the default Cloudflare CIDRs |
 
-Set `ENVIRONMENT` to a value other than `dev` in production and configure a
+Keep `ENVIRONMENT` different from `dev` in production and configure a
 specific CORS origin. The default `*` origin is intended only for development.
+For local development set `ENVIRONMENT` to `dev`. Outside `dev`, if
+`API_KEY_CUSTOM` is empty or still `YOUR_KEY_HERE`, every request is refused
+with HTTP 500 `Server misconfigured.`.
 
 ## API
 

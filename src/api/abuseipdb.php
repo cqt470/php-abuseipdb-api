@@ -17,6 +17,12 @@
             $this->token = $this->get_token() ?? $this->get_parameter("token", "string", true) ?? null;
             if(!$this->token) $this->send_error("Unauthenticated.", 401);
 
+            // the example placeholder (or an empty key) must never authenticate anybody
+            if(\ENVIRONMENT != "dev" && in_array(trim(\API_KEY_CUSTOM), ["", "YOUR_KEY_HERE"], true)){
+                $this->logger->log("auth", log_priority::critical, "API_KEY_CUSTOM is not configured in env.php, all requests are refused.");
+                $this->send_error("Server misconfigured.", 500);
+            }
+
             if(\ENVIRONMENT != "dev" && !hash_equals(\API_KEY_CUSTOM, $this->token)){
                 $hash = Security::sha256($this->token);
                 $this->logger->log("auth", log_priority::warning, "Authentication to /abuseipdb API failed via token. Hash: $hash", true);

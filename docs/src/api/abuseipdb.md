@@ -103,6 +103,7 @@ AbuseIPDB.
 | 400 | `Invalid timestamp string (must be ISO 8601).` | Invalid report timestamp |
 | 401 | `Unauthenticated.` | Missing token |
 | 403 | `Unauthorized.` | Token rejected outside development |
+| 500 | `Server misconfigured.` | `API_KEY_CUSTOM` empty or still `YOUR_KEY_HERE` outside development |
 | 405 | `POST method required.` | Non-POST request |
 | 4xx/5xx | `Got a <code> HTTP code from the API...` | AbuseIPDB answered with an error status, which is forwarded |
 | 502 | `AbuseIPDB could not be reached.` | Network error or timeout towards AbuseIPDB |
