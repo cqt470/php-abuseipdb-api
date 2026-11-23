@@ -9,6 +9,7 @@ file cache. The constructor requires the target file to exist and throws an
 ```php
 __construct(string $filepath)
 check_for_entry(string $key, string $value): bool
+find_entry(string $key, string $value): ?array
 add_entry(array $ip): void
 get_entry(string $key, string $value): ?array
 delete_entry(string $key, string $value): void
@@ -18,6 +19,11 @@ delete_entry(string $key, string $value): void
 older than `time() - CACHE_TTL` are deleted and produce a `TTL Reached`
 Discord notification. The scan continues after eviction, so later valid
 entries are still considered.
+
+`find_entry()` does the same scan and returns the matching valid entry (or
+`null`), so a lookup reads the file once. `check_for_entry()` is a wrapper
+around it. The scan runs under a shared lock; the exclusive lock is taken only
+when expired entries must be evicted.
 
 `add_entry()` ignores payloads without `data.ipAddress`, replaces an existing
 entry for the same address (refresh), adds `added_at` to the upstream `data`

@@ -6,6 +6,8 @@
     use PHPUnit\Framework\TestCase;
     use Zexa\Includes\Cache;
 
+    require_once __DIR__.'/CountingStream.php';
+
     /**
      * Bug #2: Cache::check_for_entry() evicts the WRONG entry.
      *
@@ -120,6 +122,54 @@
 
             $this->assertIsArray($entry);
             $this->assertSame(self::VALID_IP, $entry['ipAddress']);
+        }
+
+        public function test_find_entry_returns_the_entry(): void
+        {
+            $this->seedCache([$this->makeEntry(self::VALID_IP, time())]);
+
+            $entry = (new Cache($this->cache_file))->find_entry('ipAddress', self::VALID_IP);
+
+            $this->assertIsArray($entry);
+            $this->assertSame(self::VALID_IP, $entry['ipAddress']);
+        }
+
+        public function test_find_entry_returns_null_when_not_present(): void
+        {
+            $this->seedCache([$this->makeEntry(self::VALID_IP, time())]);
+
+            $this->assertNull((new Cache($this->cache_file))->find_entry('ipAddress', '203.0.113.99'));
+        }
+
+        public function test_find_entry_does_not_return_and_evicts_expired_entry(): void
+        {
+            $this->seedCache([
+                $this->makeEntry(self::STALE_IP, time() - \CACHE_TTL - 10),
+                $this->makeEntry(self::VALID_IP, time()),
+            ]);
+
+            $cache = new Cache($this->cache_file);
+            $this->assertNull($cache->find_entry('ipAddress', self::STALE_IP));
+            $this->assertFalse($this->cacheContainsIp(self::STALE_IP));
+            $this->assertSame(self::VALID_IP, $cache->find_entry('ipAddress', self::VALID_IP)['ipAddress'] ?? null);
+        }
+
+        /** A cache hit must cost one read of the file, not a check followed by a second read. */
+        public function test_find_entry_reads_the_file_once(): void
+        {
+            $this->seedCache([$this->makeEntry(self::VALID_IP, time())]);
+
+            CountingStream::register();
+            try {
+                $cache = new Cache(CountingStream::PREFIX.$this->cache_file);
+                CountingStream::$opens = 0;
+                $entry = $cache->find_entry('ipAddress', self::VALID_IP);
+            } finally {
+                CountingStream::unregister();
+            }
+
+            $this->assertSame(self::VALID_IP, $entry['ipAddress'] ?? null);
+            $this->assertSame(1, CountingStream::$opens, 'the cache file was opened more than once for one lookup');
         }
 
         // ------------------------------------------------------------------

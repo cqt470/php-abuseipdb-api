@@ -144,11 +144,12 @@
             $caching = \ENABLE_CACHING;
             if(!$ip) $ip = Security::get_ip();
             $ip = self::normalize_ip($ip); // "2001:DB8::1" and "2001:db8::1" share one cache entry
-            if($caching && !$skip_cache && $cache->check_for_entry("ipAddress", $ip)){
+            // a single read of the cache file: find_entry returns the entry itself
+            $entry = $caching && !$skip_cache ? $cache->find_entry("ipAddress", $ip) : null;
+            if($entry !== null){
                 self::logger()->log("cache", log_priority::info, "IP cache hit: $ip");
 
                 // same shape as a live AbuseIPDB response: {"data": {...}}
-                $entry = $cache->get_entry("ipAddress", $ip);
                 unset($entry["added_at"]);
                 return ["data" => $entry];
             }

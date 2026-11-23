@@ -33,32 +33,50 @@
          * @return boolean
          */
         public function check_for_entry(string $key, string $value): bool{
-            $found = false;
-            $expired = [];
+            return $this->find_entry($key, $value) !== null;
+        }
 
+        /**
+         * Returns the valid (not expired) entry whose key has the specified value.
+         * Expired entries found during the scan are evicted.
+         *
+         * One read of the file is enough: the scan runs under a shared lock, and the
+         * exclusive lock is taken only when something must be evicted.
+         *
+         * @param string $key the key
+         * @param string $value the value
+         * @return array|null the entry, or null if it is not cached (or the file is corrupted)
+         */
+        public function find_entry(string $key, string $value): ?array{
             $data = $this->read();
-            if($data === null) return false; // corrupted file, already logged by decode()
+            if($data === null) return null; // corrupted file, already logged by decode()
 
             [$keep, $stale] = $this->split_expired($data, $key);
-            if(!$stale){
-                foreach($keep as $ip){
-                    if(is_array($ip) && ($ip[$key] ?? null) == $value) return true;
-                }
-                return false;
-            }
+            if(!$stale) return self::match($keep, $key, $value);
 
             // something expired: redo the scan under the exclusive lock, the file may have changed meanwhile
+            $found = null;
+            $expired = [];
             $this->transaction(function(array $data) use ($key, $value, &$found, &$expired): ?array{
                 [$keep, $expired] = $this->split_expired($data, $key);
-                foreach($keep as $ip){
-                    if(is_array($ip) && ($ip[$key] ?? null) == $value) $found = true;
-                }
+                $found = self::match($keep, $key, $value);
 
                 return $expired ? $keep : null; // rewrite only if something was evicted
             });
 
             $this->notify_expired($expired);
             return $found;
+        }
+
+        /**
+         * First entry whose key has the specified value.
+         */
+        private static function match(array $entries, string $key, string $value): ?array{
+            foreach($entries as $ip){
+                if(is_array($ip) && ($ip[$key] ?? null) == $value) return $ip;
+            }
+
+            return null;
         }
 
         /**
@@ -122,12 +140,7 @@
          * @return array|null
          */
         public function get_entry(string $key, string $value): ?array{
-            $data = $this->read() ?? [];
-            foreach($data as $ip){
-                if(is_array($ip) && ($ip[$key] ?? null) == $value) return $ip;
-            }
-
-            return null;
+            return self::match($this->read() ?? [], $key, $value);
         }
 
         /**
