@@ -172,8 +172,7 @@
             if(isset($http_response_header) && preg_match("{HTTP\/\S*\s(\d{3})}", $http_response_header[0], $matches)) $http_code = (int)$matches[1];
             switch($http_code){
                 case "200":
-                    $cache->add_entry($data);
-                    self::logger()->log("cache", log_priority::info, "IP address added to cache: $ip");
+                    $cache->add_entry($data); // Cache logs the insertion itself
                     return $data;
                 default:
                     self::logger()->log("cache", log_priority::warning, "Got a \"$http_code\" HTTP code from the API");
@@ -193,5 +192,3 @@
             return hash("sha256", $input.$salt);
         }
     }
-
-    $security = new Security;
