@@ -55,6 +55,10 @@ Optional fields:
 | --- | --- | --- |
 | `timestamp` | string | Current server time in ISO 8601 format |
 
+`timestamp` must be a full ISO 8601 date-time with timezone, for example
+`2026-11-23T08:55:19+01:00` or `2026-11-23T07:55:19Z`. Free text such as
+`tomorrow` is rejected.
+
 Duplicate categories are removed and the array is joined with commas and sent to AbuseIPDB's
 `/report` endpoint. Reports are not cached.
 

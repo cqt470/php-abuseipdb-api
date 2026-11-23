@@ -158,6 +158,13 @@
             $this->assertSame(400, $r['status'], self::describe($r));
         }
 
+        /** A valid ISO 8601 timestamp is accepted. */
+        public function test_report_iso_timestamp_is_accepted(): void
+        {
+            $r = self::call(self::NORMAL, ['action' => 'report', 'ip' => '198.51.100.44', 'categories' => [18], 'comment' => 'x', 'timestamp' => '2026-11-23T07:55:19Z']);
+            $this->assertSame(200, $r['status'], self::describe($r));
+        }
+
         /** AbuseIPDB unreachable must give a gateway error, not a generic 500. */
         public function test_check_with_upstream_down_is_gateway_error(): void
         {

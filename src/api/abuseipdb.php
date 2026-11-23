@@ -3,7 +3,6 @@
     
     include_once __DIR__."/../includes/index.php";
 
-    use DateTime;
     use Zexa\Includes\Endpoint;
     use Zexa\Includes\log_priority;
     use Zexa\Includes\Security;
@@ -77,11 +76,7 @@
             }
             $categories = implode(",", array_unique($categories));
 
-            try{
-                $test_timestamp = new DateTime($timestamp);
-            }catch(\Throwable){
-                $this->send_error("Invalid timestamp string (must be ISO 8601).");
-            }
+            if(!self::is_iso8601($timestamp)) $this->send_error("Invalid timestamp string (must be ISO 8601).");
             
             // retrieve data
             $key = \API_KEY_ABUSEIPDB;
@@ -115,6 +110,26 @@
 
             $this->logger->log("api", log_priority::info, "IP succesfully reported.", true);
             $this->send_success("ok");
+        }
+
+        /**
+         * Checks for a full ISO 8601 date-time with timezone,
+         * e.g. 2026-11-23T08:55:19+01:00, 2026-11-23T07:55:19Z or 2026-11-23T07:55:19.123Z.
+         * Free text accepted by DateTime ("tomorrow", "now") is rejected.
+         *
+         * @param string $timestamp
+         * @return bool
+         */
+        private static function is_iso8601(string $timestamp): bool{
+            $pattern = '/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(\.\d+)?(Z|[+-](\d{2}):?(\d{2}))$/';
+            if(!preg_match($pattern, $timestamp, $m)) return false;
+
+            [, $year, $month, $day, $hour, $minute, $second] = array_map("intval", array_slice($m, 0, 7));
+            if(!checkdate($month, $day, $year)) return false;
+            if($hour > 23 || $minute > 59 || $second > 59) return false;
+            if(isset($m[9]) && ((int)$m[9] > 14 || (int)$m[10] > 59)) return false;
+
+            return true;
         }
 
         /**
