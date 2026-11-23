@@ -92,6 +92,13 @@
             $this->assertTrue(Security::validate_ip('2001:db8::1'));
         }
 
+        public function test_normalize_ip(): void
+        {
+            $this->assertSame('2001:db8::ab', Security::normalize_ip('2001:DB8:0:0::AB'));
+            $this->assertSame('203.0.113.42', Security::normalize_ip('203.0.113.42'));
+            $this->assertSame('garbage', Security::normalize_ip('garbage'));
+        }
+
         /**
          * @dataProvider cidr_provider
          */

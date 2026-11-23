@@ -12,6 +12,7 @@ is_trusted_proxy(string $ip): bool
 ip_in_cidr(string $ip, string $cidr): bool
 get_ip_info(?string $ip = null, bool $skip_cache = false): array|int
 sha256(string $input, ?string $custom_salt = null): string
+normalize_ip(string $ip): string
 ```
 
 `get_ip()` returns `REMOTE_ADDR` unless it is a trusted proxy. Only then does
@@ -27,6 +28,10 @@ request to `ABUSEIPDB_BASE_URL/check?ipAddress=<ip>&verbose` with the official
 key in the `Key` header. Only HTTP 200 is accepted for caching and return;
 other statuses are logged and the HTTP code is returned as an integer. The
 request timeout is 16 seconds.
+
+The address is normalized with `normalize_ip()` (lowercase, compressed IPv6,
+the form AbuseIPDB returns) before the cache lookup, so different spellings of
+the same IPv6 address share one cache entry.
 
 Cache hits and live responses have the same shape, `{"data": {...}}`; the
 internal `added_at` field is not exposed.

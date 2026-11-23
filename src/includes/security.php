@@ -69,6 +69,20 @@
             return filter_var($ip, FILTER_VALIDATE_IP);
         }
 
+        /**
+         * Returns the canonical form of an IP (lowercase, compressed IPv6),
+         * the same one AbuseIPDB returns. Invalid input is returned unchanged.
+         *
+         * @param string $ip
+         * @return string
+         */
+        public static function normalize_ip(string $ip): string{
+            $binary = @inet_pton($ip);
+            if($binary === false) return $ip;
+
+            return inet_ntop($binary);
+        }
+
         public static function is_trusted_proxy(string $ip): bool{
             foreach(self::get_trusted_proxies() as $cidr){
                 if(self::ip_in_cidr($ip, $cidr)) return true;
@@ -129,6 +143,7 @@
 
             $caching = \ENABLE_CACHING;
             if(!$ip) $ip = Security::get_ip();
+            $ip = self::normalize_ip($ip); // "2001:DB8::1" and "2001:db8::1" share one cache entry
             if($caching && !$skip_cache && $cache->check_for_entry("ipAddress", $ip)){
                 self::logger()->log("cache", log_priority::info, "IP cache hit: $ip");
 
