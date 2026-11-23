@@ -266,6 +266,7 @@ trusted proxy list. Invalid or missing `REMOTE_ADDR` falls back to
 
 - [API reference](./docs/src/api/abuseipdb.md)
 - [Deployment guide](./docs/DEPLOYMENT.md)
+- [Cloudflare Worker that blocks and reports scanners](./docs/CF_WORKER.md)
 - [Cache](./docs/src/includes/cache.md)
 - [Cron flush](./docs/src/includes/flusher.md)
 - [Endpoint base class](./docs/src/includes/endpoint.md)
