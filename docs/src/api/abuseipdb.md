@@ -27,8 +27,9 @@ Required fields:
 | `ip` | string | IPv4 or IPv6 address |
 
 The action calls `Security::get_ip_info()`. Successful upstream responses are
-returned in `parameters.info` and may be stored in `cache/ips.json` when
-`ENABLE_CACHING` is enabled.
+returned in `parameters.info` as `{"data": {...}}` and may be stored in
+`cache/ips.json` when `ENABLE_CACHING` is enabled. Cached answers use the same
+shape as live ones.
 
 ```bash
 curl -X POST http://localhost:8000/api/abuseipdb.php \

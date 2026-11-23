@@ -131,7 +131,11 @@
             if(!$ip) $ip = Security::get_ip();
             if($cache->check_for_entry("ipAddress", $ip) && !$skip_cache && $caching){
                 self::logger()->log("cache", log_priority::info, "IP cache hit: $ip");
-                return $cache->get_entry("ipAddress", $ip);
+
+                // same shape as a live AbuseIPDB response: {"data": {...}}
+                $entry = $cache->get_entry("ipAddress", $ip);
+                unset($entry["added_at"]);
+                return ["data" => $entry];
             }
 
             // retrieve data

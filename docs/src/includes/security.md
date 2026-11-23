@@ -10,7 +10,7 @@ get_ip(): ?string
 validate_ip(string $ip): bool
 is_trusted_proxy(string $ip): bool
 ip_in_cidr(string $ip, string $cidr): bool
-get_ip_info(?string $ip = null, bool $skip_cache = false): ?array
+get_ip_info(?string $ip = null, bool $skip_cache = false): array|int
 sha256(string $input, ?string $custom_salt = null): string
 ```
 
@@ -25,7 +25,11 @@ Defining `TRUSTED_PROXIES` replaces the default list.
 `get_ip_info()` checks the file cache when enabled, otherwise sends a GET
 request to `ABUSEIPDB_BASE_URL/check?ipAddress=<ip>&verbose` with the official
 key in the `Key` header. Only HTTP 200 is accepted for caching and return;
-other statuses are logged and return `null`. The request timeout is 16 seconds.
+other statuses are logged and the HTTP code is returned as an integer. The
+request timeout is 16 seconds.
+
+Cache hits and live responses have the same shape, `{"data": {...}}`; the
+internal `added_at` field is not exposed.
 
 `sha256()` hashes the input concatenated with `SALT_SHA256`, or with the
 explicit salt supplied by the caller.
