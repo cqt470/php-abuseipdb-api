@@ -5,7 +5,7 @@
     use Zexa\Includes\Logger;
 
     set_error_handler(function (int $severity, string $message, string $file, int $line): bool{
-        if(!(error_reporting() && $severity)) return false; // respects @ and error_reporting
+        if(!(error_reporting() & $severity)) return false; // respects @ and error_reporting
         throw new ErrorException($message, 0, $severity, $file, $line);
     });
 

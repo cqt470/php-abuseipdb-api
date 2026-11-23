@@ -135,6 +135,12 @@
             }
         }
 
+        /** The project's error handler must honour the "@" operator. */
+        public function test_error_handler_respects_at_operator(): void
+        {
+            $this->assertFalse(@file_get_contents(ServerHelper::tmp().'/does-not-exist.txt'));
+        }
+
         /** "@" must suppress warnings: ip_in_cidr on garbage must return false, not throw. */
         public function test_ip_in_cidr_with_garbage_returns_false(): void
         {
