@@ -20,6 +20,13 @@ jobs:
       with:
         php-version: '8.4'
 
-    # 3. Executes the tests using the local PHAR file
-    - name: Run PHPUnit
+    # 3. Executes every test suite using the local PHAR file
+    - name: Run unit tests
       run: php tools/phpunit-10.phar --testsuite unit
+
+    - name: Run smoke tests
+      run: php tools/phpunit-10.phar --testsuite smoke
+
+    # starts PHP built-in servers on ports 17490 and 17495-17499
+    - name: Run findings tests
+      run: php tools/phpunit-10.phar --testsuite findings
