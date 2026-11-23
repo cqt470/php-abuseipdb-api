@@ -113,11 +113,11 @@
             $new = [];
             $data = json_decode(file_get_contents($this->filepath), true) ?? [];
 
-            foreach($data as $k => $ip){
+            foreach($data as $ip){
                 if($ip[$key] == $value) continue;
-                $new[$k] = $ip;
+                $new[] = $ip; // re-index: keeps the file a JSON list, not an object
             }
 
-            file_put_contents($this->filepath, json_encode($new));
+            file_put_contents($this->filepath, json_encode($new, JSON_UNESCAPED_SLASHES));
         }
     }
