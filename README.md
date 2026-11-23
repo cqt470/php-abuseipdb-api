@@ -216,6 +216,27 @@ non-POST request.
 The complete request and error reference is
 [`docs/src/api/abuseipdb.md`](./docs/src/api/abuseipdb.md).
 
+## Cloudflare Worker
+
+A ready-to-use Worker protects a website with this proxy: it answers `403` to
+requests for sensitive paths (`.env`, `.git`, `wp-admin`, backups, ...) and
+reports the IP to AbuseIPDB as "Bad Web Bot" through the `report` action, so
+the AbuseIPDB key never leaves `env.php`. It can also block visitors by
+AbuseIPDB score (off by default).
+
+1. Create a Worker (Workers & Pages > Create application > Hello World) and
+   attach your domain.
+2. Paste the script from the [full guide](./docs/CF_WORKER.md) in Edit code.
+3. In Settings > Variables and Secrets add `ABUSEIPDB_PROXY_URL` (text, the
+   URL of `abuseipdb.php`) and `ABUSEIPDB_PROXY_TOKEN` (secret, your
+   `API_KEY_CUSTOM`).
+4. Check that `curl -i https://yoursite.com/.env` answers `403`.
+
+Turn on the [queue](#queue-and-cron): a scanner hits dozens of paths in
+seconds, and the queue merges them into one report per IP. The
+[full guide](./docs/CF_WORKER.md) covers the script, score-based blocking and
+troubleshooting.
+
 ## Runtime behavior
 
 ### Cache
