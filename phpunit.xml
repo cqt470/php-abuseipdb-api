@@ -13,5 +13,8 @@
         <testsuite name="smoke">
             <file>tests/SmokeTest.php</file>
         </testsuite>
+        <testsuite name="findings">
+            <directory>tests/Findings</directory>
+        </testsuite>
     </testsuites>
 </phpunit>
