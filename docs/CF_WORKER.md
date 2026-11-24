@@ -9,19 +9,32 @@ Optionally, it also blocks visitors whose AbuseIPDB score is too high.
 
 ## Requirements
 - A web server with php-abuseipdb-api
-- A subdomain connected to Cloudflare
+- A domain on Cloudflare, and the list of subdomains you want to protect (see
+  [Which subdomains to protect](#which-subdomains-to-protect))
 - Recommended: `ENABLE_QUEUE` on and the cron flush scheduled (see
   [DEPLOYMENT.md](./DEPLOYMENT.md#queue-and-cron-optional)). A scanner hits
   many paths in a few seconds: with the queue the reports on the same IP are
   merged and sent once, without it AbuseIPDB refuses every report after the
   first one for 15 minutes (`429`, only logged by the Worker).
 
+## Which subdomains to protect
+Attach the Worker only to the subdomains you actually care about, one by one
+(e.g. `api.yoursite.com`, `shop.yoursite.com`, `admin.yoursite.com`), not to
+the whole domain (`yoursite.com`, `*.yoursite.com`).
+
+The blocked paths are reasonable for most websites, but on some services they
+are legitimate: an app may really serve a path like `/.env` or a `.yml`/`.log`
+file, and Nextcloud or similar apps handle user files whose names can match
+the blocked patterns. On a subdomain like that the Worker would answer `403`
+to real users and report their IPs to AbuseIPDB as bad bots. Protecting only
+the subdomains you chose keeps every other service working as before.
+
 ## Steps (Web dashboard)
 1. Visit [The Cloudflare Dashboard](https://dash.cloudflare.com/)
 2. On the side panel, click on Compute > Workers & Pages
 3. Click on Create application
 4. Choose Start with Hello World! and click Deploy
-5. On the top bar click on Domains and then on the blue Add domain button, add your subdomain (e.g.: api.yoursite.com). Choose Enable for: Production
+5. On the top bar click on Domains and then on the blue Add domain button, add the first subdomain to protect (e.g.: api.yoursite.com). Choose Enable for: Production. Repeat for every other subdomain you chose (e.g.: shop.yoursite.com, admin.yoursite.com); do not add the bare domain or a wildcard
 6. On the top right side of the page click on Edit code and replace everything with:
 ```js
 // Cloudflare Worker in front of a website: blocks requests to sensitive paths and reports
